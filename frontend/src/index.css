@@ -5,6 +5,14 @@
 
 @layer base {
   body {
-    @apply bg-bg-light text-text-dark font-sans;
+    font-family: 'Lexend', sans-serif;
   }
+
+  .material-symbols-outlined {
+  font-variation-settings:
+    'FILL' 0,
+    'wght' 400,
+    'GRAD' 0,
+    'opsz' 24;
+}
 }
