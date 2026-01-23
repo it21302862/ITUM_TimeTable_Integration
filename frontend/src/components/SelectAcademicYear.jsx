@@ -124,7 +124,7 @@ const SelectAcademicYear = () => {
               <h2 class="text-[#0d121b] dark:text-white text-lg font-bold leading-tight tracking-tight">UniTime</h2>
             </div>
 
-            <div class="hidden md:flex flex-1 justify-center gap-10">
+            {/* <div class="hidden md:flex flex-1 justify-center gap-10">
               <a
                 class="flex items-center gap-2 text-[#0d121b] dark:text-gray-500 text-sm font-medium hover:text-primary transition-colors"
                 href="#"
@@ -150,7 +150,7 @@ const SelectAcademicYear = () => {
                 </span>{" "}
                 Emergency Chat
               </a>
-            </div>
+            </div> */}
 
             <div className="flex items-center gap-3">
               <button className="hidden sm:flex size-10 items-center justify-center rounded-lg bg-[#e7ebf3] dark:bg-gray-800 text-[#0d121b] dark:text-white hover:bg-primary hover:text-white transition-all">

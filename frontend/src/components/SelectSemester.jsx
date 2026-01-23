@@ -44,6 +44,24 @@ const SelectSemester = () => {
     }
   };
 
+  const getSemesterGradient = (semesterName, status) => {
+    if (semesterName?.includes("1")) {
+      return { backgroundImage: "linear-gradient(135deg, #135bec, #60a5fa)" }; // Semester 1 - Blue
+    }
+    if (semesterName?.includes("2")) {
+      return { backgroundImage: "linear-gradient(135deg, #16a34a, #86efac)" }; // Semester 2 - Green
+    }
+    if (semesterName?.includes("3")) {
+      return { backgroundImage: "linear-gradient(135deg, #7c3aed, #c084fc)" }; // Semester 3 - Purple
+    }
+    if (semesterName?.includes("4")) {
+      return { backgroundImage: "linear-gradient(135deg, #ea580c, #fb923c)" }; // Semester 4 - Orange
+    }
+
+    // fallback (unchanged behavior)
+    return getCardGradientStyle(status);
+  };
+
   const getMeta = (status) => {
     // Backend originally had CURRENT/UPCOMING/DRAFT; user also uses PAST sometimes
     switch (status) {
@@ -51,7 +69,8 @@ const SelectSemester = () => {
         return {
           icon: "radio_button_checked",
           text: "Current Semester",
-          metaClass: "text-primary-blue text-xs font-semibold mt-2 flex items-center gap-1",
+          metaClass:
+            "text-primary-blue text-xs font-semibold mt-2 flex items-center gap-1",
           isActive: true,
         };
       case "UPCOMING":
@@ -129,7 +148,11 @@ const SelectSemester = () => {
           <header className="flex items-center justify-between whitespace-nowrap border-b border-solid border-[#cfd7e7] dark:border-gray-800 bg-white dark:bg-background-dark px-6 py-3 md:px-40">
             <div className="flex items-center gap-4 text-primary-blue">
               <div className="size-8">
-                <svg fill="none" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+                <svg
+                  fill="none"
+                  viewBox="0 0 48 48"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
                   <path
                     d="M24 45.8096C19.6865 45.8096 15.4698 44.5305 11.8832 42.134C8.29667 39.7376 5.50128 36.3314 3.85056 32.3462C2.19985 28.361 1.76794 23.9758 2.60947 19.7452C3.451 15.5145 5.52816 11.6284 8.57829 8.5783C11.6284 5.52817 15.5145 3.45101 19.7452 2.60948C23.9758 1.76795 28.361 2.19986 32.3462 3.85057C36.3314 5.50129 39.7376 8.29668 42.134 11.8833C44.5305 15.4698 45.8096 19.6865 45.8096 24L24 24L24 45.8096Z"
                     fill="currentColor"
@@ -147,13 +170,18 @@ const SelectSemester = () => {
                   <span className="material-symbols-outlined">settings</span>
                 </button>
                 <button className="flex items-center justify-center rounded-lg h-10 w-10 bg-primary-blue/10 text-primary-blue hover:bg-primary-blue/20 transition-colors">
-                  <span className="material-symbols-outlined">notifications</span>
+                  <span className="material-symbols-outlined">
+                    notifications
+                  </span>
                 </button>
               </div>
 
               <div
-                className="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-10 border border-gray-200 dark:border-gray-700"
-                aria-label="Profile picture"
+                className="h-10 w-10 overflow-hidden rounded-full border-2 border-primary/20 bg-cover bg-center"
+                style={{
+                  backgroundImage:
+                    'url("https://lh3.googleusercontent.com/aida-public/AB6AXuAc_zqWPCY66JwFhgj4TUTraFNpWiBzqhlJGkp2dcxsHXoXQzn1wqgZIVUAjeKmHvwXU18pSGoNv9VbmPJ4_IyLfsaz3bw-EQcxLSY6O1FyWaiJhwZ3nkM8IxOZJJPpnuRuWHidB6UEIS2I0UbjWsj7GL1o07qsuxFJyDTTrDfDETbVt5apdACzL8BZStgospHZve4Z-PLekfpdrKmaSr7WcCj_kFwCf54uPGMf5xxWbwqpliSqXw3uJZy4mZOD0AARZE67z8JpyFk")',
+                }}
               />
             </div>
           </header>
@@ -170,10 +198,14 @@ const SelectSemester = () => {
                   }}
                   className="text-primary-blue hover:underline text-base font-medium leading-normal flex items-center gap-1"
                 >
-                  <span className="material-symbols-outlined text-sm">home</span>
+                  <span className="material-symbols-outlined text-sm">
+                    home
+                  </span>
                   {yearLabel}
                 </a>
-                <span className="text-[#4c669a] text-base font-medium leading-normal">/</span>
+                <span className="text-[#4c669a] text-base font-medium leading-normal">
+                  /
+                </span>
                 <span className="text-[#0d121b] dark:text-white text-base font-medium leading-normal">
                   Semesters
                 </span>
@@ -186,7 +218,8 @@ const SelectSemester = () => {
                     Select Semester
                   </h1>
                   <p className="text-[#4c669a] dark:text-gray-400 text-base font-normal leading-normal">
-                    Choose the academic period you wish to manage for the academic year {yearLabel}.
+                    Choose the academic period you wish to manage for the
+                    academic year {yearLabel}.
                   </p>
                 </div>
               </div>
@@ -197,11 +230,10 @@ const SelectSemester = () => {
                   const name = semester.name || `Semester ${index + 1}`;
                   const meta = getMeta(semester.status);
 
-          
-                  const isFourth = index === 3;
-                  const gradientStyle = isFourth
-                    ? { backgroundImage: "linear-gradient(135deg, #ea580c, #fb923c)" }
-                    : getCardGradientStyle(semester.status);
+                  const gradientStyle = getSemesterGradient(
+                    name,
+                    semester.status,
+                  );
 
                   return (
                     <div
@@ -215,7 +247,7 @@ const SelectSemester = () => {
                         })
                       }
                       className={`group flex flex-col gap-3 pb-3 bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm ${getAccentBorderClass(
-                        semester.status
+                        semester.status,
                       )} hover:shadow-md transition-all cursor-pointer relative`}
                     >
                       {meta.isActive ? (
@@ -231,12 +263,16 @@ const SelectSemester = () => {
                       />
 
                       <div>
-                        <p className="text-[#0d121b] dark:text-white text-lg font-bold leading-normal">{name}</p>
+                        <p className="text-[#0d121b] dark:text-white text-lg font-bold leading-normal">
+                          {name}
+                        </p>
                         <p className="text-[#4c669a] dark:text-gray-400 text-sm font-medium leading-normal">
                           {getDateRange(semester)}
                         </p>
                         <p className={meta.metaClass}>
-                          <span className="material-symbols-outlined text-xs">{meta.icon}</span>
+                          <span className="material-symbols-outlined text-xs">
+                            {meta.icon}
+                          </span>
                           {meta.text}
                         </p>
                       </div>
@@ -250,13 +286,16 @@ const SelectSemester = () => {
                 <div className="flex flex-1 flex-col items-start justify-between gap-4 rounded-xl border border-[#cfd7e7] dark:border-gray-700 bg-white dark:bg-gray-800 p-6 @[480px]:flex-row @[480px]:items-center shadow-sm">
                   <div className="flex flex-col gap-1">
                     <div className="flex items-center gap-2">
-                      <span className="material-symbols-outlined text-primary-blue">analytics</span>
+                      <span className="material-symbols-outlined text-primary-blue">
+                        analytics
+                      </span>
                       <p className="text-[#0d121b] dark:text-white text-base font-bold leading-tight">
                         Academic Plan Overview
                       </p>
                     </div>
                     <p className="text-[#4c669a] dark:text-gray-400 text-base font-normal leading-normal">
-                      Review how these semesters align with your long-term graduation requirements and degree path.
+                      Review how these semesters align with your long-term
+                      graduation requirements and degree path.
                     </p>
                   </div>
 
