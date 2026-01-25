@@ -7,11 +7,37 @@ const WeeklyTimetable = () => {
   const location = useLocation();
 
   const [timetableSlots, setTimetableSlots] = useState([]);
+  const [courses, setCourses] = useState([]);
+  const [instructors, setInstructors] = useState([]);
+  const [lectureHalls, setLectureHalls] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [currentWeek] = useState(getCurrentWeek());
   const [viewMode, setViewMode] = useState("weekly");
   const [selectedSlot, setSelectedSlot] = useState(null);
+
+  const loadData = async () => {
+    try {
+      setLoading(true);
+      const [coursesData, instructorsData, lectureHallsData] =
+        await Promise.all([
+          api.getCourses(),
+          api.getInstructors(),
+          api.getLectureHalls(),
+        ]);
+      setCourses(coursesData);
+      setInstructors(instructorsData);
+      setLectureHalls(lectureHallsData);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadData();
+  }, []);
 
   // Modal state
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -76,17 +102,12 @@ const WeeklyTimetable = () => {
     setIsModalOpen(false);
   };
 
-  // Handle form submission (you can connect to API here)
   const handleCreateSlot = (e) => {
     e.preventDefault();
     console.log("Creating slot:", slotForm);
-    // TODO: Call api.createSlot(slotForm) here
-    // After success: refresh timetable + close modal
     setIsModalOpen(false);
-    // Example: setTimetableSlots([...timetableSlots, newSlot]);
   };
 
-  // Your existing formatting & helper functions
   const formatDate = (date) =>
     date.toLocaleDateString("en-US", {
       month: "long",
@@ -171,13 +192,21 @@ const WeeklyTimetable = () => {
   };
 
   const getSlotsForDayAndTime = (day, timeSlot) => {
+    const [rowH, rowM] = timeSlot.split(":").map(Number);
+    const rowStart = rowH * 60 + rowM;
+    const rowEnd = rowStart + 60; // one row = 1 hour
+
     return timetableSlots.filter((slot) => {
       if (slot.dayOfWeek !== day) return false;
-      const [slotH, slotM] = slot.startTime.split(":").map(Number);
-      const [rowH, rowM] = timeSlot.split(":").map(Number);
-      const slotStart = slotH * 60 + slotM;
-      const rowStart = rowH * 60 + rowM;
-      return slotStart >= rowStart && slotStart < rowStart + 60;
+
+      const [startH, startM] = slot.startTime.split(":").map(Number);
+      const [endH, endM] = slot.endTime.split(":").map(Number);
+
+      const slotStart = startH * 60 + startM;
+      const slotEnd = endH * 60 + endM;
+
+      // ✅ overlap check
+      return slotStart < rowEnd && slotEnd > rowStart;
     });
   };
 
@@ -411,7 +440,6 @@ const WeeklyTimetable = () => {
         </main>
 
         {/* Right Details Panel */}
-        {/* Right Details Panel */}
         <aside className="w-80 bg-white dark:bg-gray-900 border-l border-[#e7ebf3] dark:border-gray-800 flex flex-col">
           <div className="p-6">
             <div className="flex justify-between items-center mb-6">
@@ -569,9 +597,11 @@ const WeeklyTimetable = () => {
                   <option disabled selected>
                     Select a module
                   </option>
-                  <option>CS201 - Data Structures</option>
-                  <option>CS205 - Operating Systems</option>
-                  {/* Replace with real data later */}
+                  {courses.map((course) => (
+                    <option key={course.id} value={course.id}>
+                      {course.code} - {course.name}
+                    </option>
+                  ))}
                 </select>
               </div>
 
@@ -606,10 +636,11 @@ const WeeklyTimetable = () => {
                     <option disabled selected>
                       Select Location
                     </option>
-                    <option>Hall B-12</option>
-                    <option>Lab 04</option>
-                    <option>Seminar Room 2</option>
-                    <option>Lecture Hall 1</option>
+                    {lectureHalls.map((lecturehall) => (
+                    <option key={lecturehall.id} value={lecturehall.id}>
+                      {lecturehall.name}
+                    </option>
+                  ))}
                   </select>
                 </div>
               </div>
@@ -627,9 +658,11 @@ const WeeklyTimetable = () => {
                   <option disabled selected>
                     Assign Instructor
                   </option>
-                  <option>Dr. Alan Turing</option>
-                  <option>Prof. Grace Hopper</option>
-                  <option>Dr. John Locke</option>
+                  {instructors.map((instructor) => (
+                    <option key={instructor.id} value={instructor.id}>
+                      {instructor.name}
+                    </option>
+                  ))}
                 </select>
               </div>
 
@@ -687,7 +720,7 @@ const WeeklyTimetable = () => {
                 </button>
                 <button
                   type="submit"
-                  className="px-8 py-2.5 bg-primary text-white rounded-xl text-sm font-bold shadow-lg shadow-primary/25 hover:bg-blue-700 active:scale-95 transition-all"
+                  className="px-8 py-2.5 bg-blue-500 text-white rounded-xl text-sm font-bold shadow-lg shadow-primary/25 hover:bg-blue-700 active:scale-95 transition-all"
                 >
                   Create Slot
                 </button>

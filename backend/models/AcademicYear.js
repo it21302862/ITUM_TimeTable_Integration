@@ -3,7 +3,7 @@ export default (sequelize, DataTypes) => {
     yearLabel: {
       type: DataTypes.STRING,
       allowNull: false,
-      unique: true,
+      // unique: true,
     },
     status: {
       type: DataTypes.ENUM("PAST", "ACTIVE", "DRAFT"),

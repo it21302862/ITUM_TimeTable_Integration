@@ -1,4 +1,4 @@
-import { Course } from "../models/index.js";
+import { Course, Instructor } from "../models/index.js";
 
 export async function create(req, res) {
   const course = await Course.create(req.body);
@@ -6,11 +6,25 @@ export async function create(req, res) {
 }
 
 export async function getAll(req, res) {
-  res.json(await Course.findAll());
+  const courses = await Course.findAll({
+    include: [
+      { model: Instructor, as: "assignedInstructor" },
+      { model: Instructor, as: "moduleLeader" },
+      { model: Instructor, as: "moduleCoordinator" },
+    ],
+  });
+  res.json(courses);
 }
 
 export async function getOne(req, res) {
-  res.json(await Course.findByPk(req.params.id));
+  const course = await Course.findByPk(req.params.id, {
+    include: [
+      { model: Instructor, as: "assignedInstructor" },
+      { model: Instructor, as: "moduleLeader" },
+      { model: Instructor, as: "moduleCoordinator" },
+    ],
+  });
+  res.json(course);
 }
 
 export async function update(req, res) {

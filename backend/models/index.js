@@ -36,6 +36,21 @@ Instructor.hasMany(TimetableSlot);
 TimetableSlot.belongsTo(LectureHall);
 LectureHall.hasMany(TimetableSlot);
 
+Course.belongsTo(Instructor, {
+  as: "assignedInstructor",
+  foreignKey: "assignedInstructorId"
+});
+
+Course.belongsTo(Instructor, {
+  as: "moduleLeader",
+  foreignKey: "moduleLeaderId"
+});
+
+Course.belongsTo(Instructor, {
+  as: "moduleCoordinator",
+  foreignKey: "moduleCoordinatorId"
+});
+
 export {
   sequelize,
   AcademicYear,
