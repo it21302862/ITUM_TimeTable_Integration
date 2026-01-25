@@ -3,5 +3,6 @@ export default (sequelize, DataTypes) => {
     name: DataTypes.STRING,
     email: DataTypes.STRING,
     department: DataTypes.STRING,
+    address: DataTypes.STRING,
   });
 };

@@ -14,16 +14,39 @@ const InstructorsPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
+  const [instructorModulesMap, setInstructorModulesMap] = useState({});
+  const [loadingModulesMap, setLoadingModulesMap] = useState({});
 
   const loadInstructors = async () => {
     try {
       setLoading(true);
       const data = await api.getInstructors();
       setInstructors(data);
+
+      data.forEach((ins) => loadModules(ins.id));
     } catch (err) {
       setError(err.message);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadModules = async (instructorId) => {
+    if (!instructorId) return;
+    try {
+      setLoadingModulesMap((prev) => ({ ...prev, [instructorId]: true }));
+
+      const modules = await api.getModulesByInstructor(instructorId);
+
+      setInstructorModulesMap((prev) => ({
+        ...prev,
+        [instructorId]: modules,
+      }));
+    } catch (err) {
+      console.error("Failed to fetch modules:", err);
+      setInstructorModulesMap((prev) => ({ ...prev, [instructorId]: [] }));
+    } finally {
+      setLoadingModulesMap((prev) => ({ ...prev, [instructorId]: false }));
     }
   };
 
@@ -48,6 +71,7 @@ const InstructorsPage = () => {
       email: ins.email || "",
       department: ins.department || "",
     });
+    loadModules(ins.id);
   };
 
   const handleSubmit = async (e) => {
@@ -402,18 +426,17 @@ const InstructorsPage = () => {
                             </div>
 
                             {/* Location */}
-                            <div>
-                              <span
-                                className="text-[10px] font-black text-gray-400
-                                 uppercase tracking-widest block mb-1.5"
-                              >
+                            <div className="col-span-2">
+                              <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-1.5">
                                 Location
                               </span>
-                              <div className="flex items-center gap-2 text-sm font-medium">
-                                <span className="material-symbols-outlined text-blue-600 text-base">
+                              <div className="flex items-start gap-2 text-sm font-medium">
+                                <span className="material-symbols-outlined text-blue-600 text-base mt-0.5 shrink-0">
                                   location_on
                                 </span>
-                                <span>{ins.office || "Not set"}</span>
+                                <span className="flex-1 whitespace-normal break-words leading-tight">
+                                  {ins.address || "Not set"}
+                                </span>
                               </div>
                             </div>
 
@@ -427,13 +450,24 @@ const InstructorsPage = () => {
                               </span>
 
                               <div className="flex flex-wrap gap-2">
-                                <span
-                                  className="px-3 py-1.5 bg-gray-50 dark:bg-gray-800
-                                   text-[11px] font-bold rounded-lg
-                                   border border-gray-100 dark:border-gray-700"
-                                >
-                                  (modules coming soon)
-                                </span>
+                                {loadingModulesMap[ins.id] ? (
+                                  <span className="px-3 py-1.5 bg-gray-50 dark:bg-gray-800 text-[11px] font-bold rounded-lg border border-gray-100 dark:border-gray-700">
+                                    Loading modules...
+                                  </span>
+                                ) : instructorModulesMap[ins.id]?.length > 0 ? (
+                                  instructorModulesMap[ins.id].map((mod) => (
+                                    <span
+                                      key={mod.id}
+                                      className="px-3 py-1.5 bg-gray-50 dark:bg-gray-800 text-[11px] font-bold rounded-lg border border-gray-100 dark:border-gray-700"
+                                    >
+                                      {mod.code} - {mod.name}
+                                    </span>
+                                  ))
+                                ) : (
+                                  <span className="px-3 py-1.5 bg-gray-50 dark:bg-gray-800 text-[11px] font-bold rounded-lg border border-gray-100 dark:border-gray-700">
+                                    No modules assigned
+                                  </span>
+                                )}
                               </div>
                             </div>
                           </div>

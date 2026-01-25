@@ -207,4 +207,14 @@ export const api = {
     }
     return response.json();
   },
+
+  async getModulesByInstructor(instructorId) {
+    const response = await fetch(
+      `${API_BASE_URL}/courses/by-instructor/${instructorId}`,
+    );
+    if (!response.ok) {
+      throw new Error("Failed to fetch modules for instructor");
+    }
+    return response.json();
+  },
 };

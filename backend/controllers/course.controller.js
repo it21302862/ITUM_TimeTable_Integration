@@ -1,4 +1,5 @@
 import { Course, Instructor } from "../models/index.js";
+import { Op } from "sequelize";
 
 export async function create(req, res) {
   const course = await Course.create(req.body);
@@ -36,3 +37,30 @@ export async function remove(req, res) {
   await Course.destroy({ where: { id: req.params.id } });
   res.json({ message: "Course deleted" });
 }
+
+export async function getModulesByInstructor(req, res) {
+  try {
+    const instructorId = Number(req.params.id);
+
+    if (!instructorId) {
+      return res.status(400).json({ message: "Invalid instructor ID" });
+    }
+
+    const courses = await Course.findAll({
+      where: {
+        [Op.or]: [
+          { moduleLeaderId: instructorId },
+          { assignedInstructorId: instructorId },
+          { moduleCoordinatorId: instructorId },
+        ],
+      },
+      attributes: ["id", "code", "name"],
+    });
+
+    res.json(courses);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Error fetching modules" });
+  }
+}
+
