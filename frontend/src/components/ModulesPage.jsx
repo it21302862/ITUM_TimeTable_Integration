@@ -37,7 +37,7 @@ const ModulesPage = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [sortBy, setSortBy] = useState("name"); 
   const [sortOrder, setSortOrder] = useState("asc"); 
-  const itemsPerPage = 6;
+  const itemsPerPage = 4;
 
   const loadData = async () => {
     try {
