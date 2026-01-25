@@ -51,6 +51,13 @@ Course.belongsTo(Instructor, {
   foreignKey: "moduleCoordinatorId"
 });
 
+// Course belongs to Semester and AcademicYear (optional associations)
+Course.belongsTo(Semester, { foreignKey: "SemesterId" });
+Semester.hasMany(Course, { foreignKey: "SemesterId" });
+
+Course.belongsTo(AcademicYear, { foreignKey: "AcademicYearId" });
+AcademicYear.hasMany(Course, { foreignKey: "AcademicYearId" });
+
 export {
   sequelize,
   AcademicYear,

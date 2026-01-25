@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useParams, useLocation, useNavigate } from "react-router-dom";
 import { api } from "../services/api";
 
 const emptyCourse = {
@@ -12,6 +13,15 @@ const emptyCourse = {
 };
 
 const ModulesPage = () => {
+  // Get yearId and semesterId from URL params (optional)
+  const { yearId, semesterId } = useParams();
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  // Get state passed from navigation
+  const yearLabel = location.state?.yearLabel || "";
+  const semesterName = location.state?.semesterName || "";
+
   const [courses, setCourses] = useState([]);
   const [instructors, setInstructors] = useState([]);
   const [lectureHalls, setLectureHalls] = useState([]);
@@ -20,17 +30,20 @@ const ModulesPage = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  // Pagination & search
+  // Pagination, search & sorting
   const [currentPage, setCurrentPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState("");
-  const itemsPerPage = 4;
+  const [sortBy, setSortBy] = useState("name"); 
+  const [sortOrder, setSortOrder] = useState("asc"); 
+  const itemsPerPage = 6;
 
   const loadData = async () => {
     try {
       setLoading(true);
       const [coursesData, instructorsData, lectureHallsData] = await Promise.all([
-        api.getCourses(),
+        api.getCourses({ semesterId: Number(semesterId) }), 
         api.getInstructors(),
         api.getLectureHalls(),
       ]);
@@ -46,7 +59,7 @@ const ModulesPage = () => {
 
   useEffect(() => {
     loadData();
-  }, []);
+  }, [semesterId]);
 
   // Filter courses based on search
   const filteredCourses = courses.filter((course) => {
@@ -61,11 +74,50 @@ const ModulesPage = () => {
     );
   });
 
+  // Sort filtered courses
+  const sortedCourses = [...filteredCourses].sort((a, b) => {
+    let aVal, bVal;
+    
+    switch (sortBy) {
+      case "code":
+        aVal = (a.code || "").toLowerCase();
+        bVal = (b.code || "").toLowerCase();
+        break;
+      case "credit":
+        aVal = Number(a.credit) || 0;
+        bVal = Number(b.credit) || 0;
+        break;
+      case "name":
+      default:
+        aVal = (a.name || "").toLowerCase();
+        bVal = (b.name || "").toLowerCase();
+    }
+    
+    if (sortBy === "credit") {
+      return sortOrder === "asc" ? aVal - bVal : bVal - aVal;
+    }
+    
+    if (aVal < bVal) return sortOrder === "asc" ? -1 : 1;
+    if (aVal > bVal) return sortOrder === "asc" ? 1 : -1;
+    return 0;
+  });
+
+  // Toggle sort
+  const handleSort = (field) => {
+    if (sortBy === field) {
+      setSortOrder(sortOrder === "asc" ? "desc" : "asc");
+    } else {
+      setSortBy(field);
+      setSortOrder("asc");
+    }
+    setCurrentPage(1);
+  };
+
   // Pagination
-  const totalItems = filteredCourses.length;
+  const totalItems = sortedCourses.length;
   const totalPages = Math.ceil(totalItems / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
-  const currentItems = filteredCourses.slice(startIndex, startIndex + itemsPerPage);
+  const currentItems = sortedCourses.slice(startIndex, startIndex + itemsPerPage);
 
   const goToPage = (page) => {
     if (page >= 1 && page <= totalPages) setCurrentPage(page);
@@ -142,6 +194,9 @@ const ModulesPage = () => {
       assignedInstructorId: form.assignedInstructorId ? Number(form.assignedInstructorId) : null,
       moduleLeaderId: form.moduleLeaderId ? Number(form.moduleLeaderId) : null,
       moduleCoordinatorId: form.moduleCoordinatorId ? Number(form.moduleCoordinatorId) : null,
+      // Include semester and year if available from URL params
+      SemesterId: semesterId ? Number(semesterId) : null,
+      AcademicYearId: yearId ? Number(yearId) : null,
     };
 
     try {
@@ -180,7 +235,7 @@ const ModulesPage = () => {
   return (
     <div className="bg-background-light dark:bg-background-dark text-[#0d121b] dark:text-white min-h-screen flex flex-col font-['Lexend',sans-serif]">
       {/* Top Navigation */}
-      <header className="flex items-center justify-between whitespace-nowrap border-b border-solid border-[#cfd7e7] dark:border-gray-800 bg-white dark:bg-background-dark px-6 py-3 md:px-40">
+      <header className="flex items-center justify-between whitespace-nowrap border-b border-solid border-[#cfd7e7] dark:border-gray-800 bg-white dark:bg-background-dark px-4 sm:px-6 py-3">
         <div className="flex items-center gap-4 text-primary-blue">
           <div className="size-8">
             <svg fill="none" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
@@ -190,12 +245,12 @@ const ModulesPage = () => {
               />
             </svg>
           </div>
-          <h2 className="text-[#0d121b] dark:text-white text-lg font-bold leading-tight tracking-[-0.015em]">
+          <h2 className="text-[#0d121b] dark:text-white text-lg font-bold leading-tight tracking-[-0.015em] hidden sm:block">
             UniTime Manager
           </h2>
         </div>
 
-        <div className="flex flex-1 justify-end gap-4 md:gap-8 items-center">
+        <div className="flex flex-1 justify-end gap-2 sm:gap-4 items-center">
           <div className="flex gap-2">
             <button className="flex items-center justify-center rounded-lg h-10 w-10 bg-primary-blue/10 text-primary-blue hover:bg-primary-blue/20 transition-colors">
               <span className="material-symbols-outlined">settings</span>
@@ -215,44 +270,91 @@ const ModulesPage = () => {
         </div>
       </header>
 
+      {/* Breadcrumbs */}
+      <div className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 px-4 sm:px-6 py-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2 text-sm flex-wrap">
+            <button
+              onClick={() => navigate("/")}
+              className="text-blue-600 hover:underline flex items-center gap-1"
+            >
+              <span className="material-symbols-outlined text-sm">home</span>
+              <span className="hidden sm:inline">Home</span>
+            </button>
+            {yearId && semesterId && (
+              <>
+                <span className="text-gray-400">/</span>
+                <button
+                  onClick={() => navigate(`/semesters/${yearId}`)}
+                  className="text-blue-600 hover:underline"
+                >
+                  {yearLabel || "Year"}
+                </button>
+                <span className="text-gray-400">/</span>
+                <button
+                  onClick={() => navigate(`/timetable/${yearId}/${semesterId}`, { state: { yearLabel, semesterName } })}
+                  className="text-blue-600 hover:underline"
+                >
+                  {semesterName || "Semester"}
+                </button>
+              </>
+            )}
+            <span className="text-gray-400">/</span>
+            <span className="text-gray-600 dark:text-gray-400">Modules</span>
+          </div>
+          {/* Mobile sidebar toggle */}
+          <button
+            onClick={() => setSidebarOpen(!sidebarOpen)}
+            className="lg:hidden p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800"
+          >
+            <span className="material-symbols-outlined">menu</span>
+          </button>
+        </div>
+      </div>
+
       <div className="flex flex-1 overflow-hidden">
-        {/* Left Sidebar */}
-        <aside className="w-64 bg-white dark:bg-gray-900 border-r border-[#e7ebf3] dark:border-gray-800 flex flex-col">
+        {/* Left Sidebar - Hidden on mobile unless toggled */}
+        <aside className={`${sidebarOpen ? 'block' : 'hidden'} lg:block w-64 bg-white dark:bg-gray-900 border-r border-[#e7ebf3] dark:border-gray-800 flex flex-col absolute lg:relative z-40 h-full`}>
           <div className="p-6 flex-1 flex flex-col gap-6">
             <div className="space-y-4">
               <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider">Management</h3>
               <nav className="space-y-1">
-                <a
-                  className="flex items-center gap-3 px-3 py-2 rounded-lg bg-primary/10 text-primary font-medium bg-blue-600/10 text-blue-700 dark:text-blue-400"
-                  href="#"
+                <button
+                  className="w-full flex items-center gap-3 px-3 py-2 rounded-lg bg-blue-600/10 text-blue-700 dark:text-blue-400 font-medium"
                 >
                   <span className="material-symbols-outlined text-xl">book</span>
                   <span className="text-sm font-medium">Modules</span>
-                </a>
-                <a className="flex items-center gap-3 px-3 py-2 rounded-lg bg-primary/10 text-primary font-medium" href="#">
-                  <span className="material-symbols-outlined text-xl">assignment</span>
-                  <span className="text-sm font-medium">Module Outline</span>
-                </a>
+                </button>
+                <button
+                  onClick={() => navigate("/instructors")}
+                  className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-600 dark:text-gray-400"
+                >
+                  <span className="material-symbols-outlined text-xl">groups</span>
+                  <span className="text-sm font-medium">Instructors</span>
+                </button>
               </nav>
             </div>
 
             <div className="mt-auto border-t border-gray-100 dark:border-gray-800 pt-6 space-y-4">
               <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider">Quick Access</h3>
               <div className="grid grid-cols-1 gap-2">
-                <a
-                  href="/timetable/1"
-                  className="flex items-center gap-3 px-4 py-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-[#0d121b] dark:text-white rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 transition-all font-medium"
-                >
-                  <span className="material-symbols-outlined">table</span>
-                  <span>Timetable</span>
-                </a>
-                <a
-                  href="/instructors"
-                  className="flex items-center gap-3 px-4 py-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-[#0d121b] dark:text-white rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 transition-all font-medium"
-                >
-                  <span className="material-symbols-outlined">groups</span>
-                  <span>Instructors</span>
-                </a>
+                {yearId && semesterId ? (
+                  <button
+                    onClick={() => navigate(`/timetable/${yearId}/${semesterId}`, { state: { yearLabel, semesterName } })}
+                    className="flex items-center gap-3 px-4 py-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-[#0d121b] dark:text-white rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 transition-all font-medium"
+                  >
+                    <span className="material-symbols-outlined">table</span>
+                    <span>Back to Timetable</span>
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => navigate("/")}
+                    className="flex items-center gap-3 px-4 py-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-[#0d121b] dark:text-white rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 transition-all font-medium"
+                  >
+                    <span className="material-symbols-outlined">home</span>
+                    <span>Select Year</span>
+                  </button>
+                )}
               </div>
             </div>
           </div>
@@ -310,16 +412,52 @@ const ModulesPage = () => {
             </div>
 
             {/* Table */}
-            <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-[#e7ebf3] dark:border-gray-800 overflow-hidden">
-              <table className="w-full text-left border-collapse">
+            <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-[#e7ebf3] dark:border-gray-800 overflow-x-auto">
+              <table className="w-full text-left border-collapse min-w-[900px]">
                 <thead>
                   <tr className="bg-gray-50 dark:bg-gray-800/50 border-b border-[#e7ebf3] dark:border-gray-800">
-                    <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-wider">Module Code</th>
-                    <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-wider">Module Name</th>
-                    <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-wider">Credits</th>
+                    <th 
+                      onClick={() => handleSort("code")}
+                      className="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-wider cursor-pointer hover:text-gray-600 select-none"
+                    >
+                      <div className="flex items-center gap-1">
+                        Module Code
+                        {sortBy === "code" && (
+                          <span className="material-symbols-outlined text-sm">
+                            {sortOrder === "asc" ? "arrow_upward" : "arrow_downward"}
+                          </span>
+                        )}
+                      </div>
+                    </th>
+                    <th 
+                      onClick={() => handleSort("name")}
+                      className="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-wider cursor-pointer hover:text-gray-600 select-none"
+                    >
+                      <div className="flex items-center gap-1">
+                        Module Name
+                        {sortBy === "name" && (
+                          <span className="material-symbols-outlined text-sm">
+                            {sortOrder === "asc" ? "arrow_upward" : "arrow_downward"}
+                          </span>
+                        )}
+                      </div>
+                    </th>
+                    <th 
+                      onClick={() => handleSort("credit")}
+                      className="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-wider cursor-pointer hover:text-gray-600 select-none"
+                    >
+                      <div className="flex items-center gap-1">
+                        Credits
+                        {sortBy === "credit" && (
+                          <span className="material-symbols-outlined text-sm">
+                            {sortOrder === "asc" ? "arrow_upward" : "arrow_downward"}
+                          </span>
+                        )}
+                      </div>
+                    </th>
                     <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-wider">Module Leader</th>
-                    <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-wider">Assigned Instructor</th>
-                    <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-wider">Module Cordinator</th>
+                    <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-wider hidden xl:table-cell">Assigned Instructor</th>
+                    <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-wider hidden 2xl:table-cell">Module Coordinator</th>
                     <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-wider text-right">Actions</th>
                   </tr>
                 </thead>
@@ -348,7 +486,7 @@ const ModulesPage = () => {
                             <span className="text-sm font-medium">{course.moduleLeader?.name || "Not assigned"}</span>
                           </div>
                         </td>
-                        <td className="px-6 py-4">
+                        <td className="px-6 py-4 hidden xl:table-cell">
                           <div className="flex items-center gap-2">
                             <div className="size-7 rounded-full bg-primary/10 text-primary flex items-center justify-center text-[10px] font-bold">
                               {course.assignedInstructor?.name?.slice(0, 2).toUpperCase() || "NA"}
@@ -356,7 +494,7 @@ const ModulesPage = () => {
                             <span className="text-sm font-medium">{course.assignedInstructor?.name || "Not assigned"}</span>
                           </div>
                         </td>
-                        <td className="px-6 py-4">
+                        <td className="px-6 py-4 hidden 2xl:table-cell">
                           <div className="flex items-center gap-2">
                             <div className="size-7 rounded-full bg-primary/10 text-primary flex items-center justify-center text-[10px] font-bold">
                               {course.moduleCoordinator?.name?.slice(0, 2).toUpperCase() || "NA"}

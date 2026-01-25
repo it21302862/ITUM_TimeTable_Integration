@@ -1,10 +1,16 @@
 import { useState, useEffect } from "react";
-import { useParams, useLocation } from "react-router-dom";
+import { useParams, useLocation, useNavigate } from "react-router-dom";
 import { api } from "../services/api";
 
 const WeeklyTimetable = () => {
-  const { semesterId } = useParams();
+  // Get both yearId and semesterId from URL params
+  const { yearId, semesterId } = useParams();
   const location = useLocation();
+  const navigate = useNavigate();
+
+  // Extract state passed from navigation
+  const semesterName = location.state?.semesterName || "Semester";
+  const yearLabel = location.state?.yearLabel || "";
 
   const [timetableSlots, setTimetableSlots] = useState([]);
   const [courses, setCourses] = useState([]);
@@ -15,19 +21,33 @@ const WeeklyTimetable = () => {
   const [currentWeek] = useState(getCurrentWeek());
   const [viewMode, setViewMode] = useState("weekly");
   const [selectedSlot, setSelectedSlot] = useState(null);
+  const [saving, setSaving] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  const loadData = async () => {
+  // Load all dropdown data
+  const loadDropdownData = async () => {
     try {
-      setLoading(true);
       const [coursesData, instructorsData, lectureHallsData] =
         await Promise.all([
-          api.getCourses(),
+          api.getCourses(), // Get all courses for dropdowns
           api.getInstructors(),
           api.getLectureHalls(),
         ]);
-      setCourses(coursesData);
-      setInstructors(instructorsData);
-      setLectureHalls(lectureHallsData);
+      setCourses(coursesData || []);
+      setInstructors(instructorsData || []);
+      setLectureHalls(lectureHallsData || []);
+    } catch (err) {
+      console.error("Error loading dropdown data:", err);
+    }
+  };
+
+  // Load timetable slots for the semester
+  const loadTimetable = async () => {
+    if (!semesterId) return;
+    try {
+      setLoading(true);
+      const data = await api.getTimetableBySemester(semesterId);
+      setTimetableSlots(data || []);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -36,11 +56,16 @@ const WeeklyTimetable = () => {
   };
 
   useEffect(() => {
-    loadData();
+    loadDropdownData();
   }, []);
+
+  useEffect(() => {
+    loadTimetable();
+  }, [semesterId]);
 
   // Modal state
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
   const [slotForm, setSlotForm] = useState({
     dayOfWeek: "MONDAY",
     startTime: "09:00",
@@ -62,21 +87,6 @@ const WeeklyTimetable = () => {
     return { start: monday, end: friday, today: new Date() };
   }
 
-  useEffect(() => {
-    const fetchTimetable = async () => {
-      try {
-        const data = await api.getTimetableBySemester(semesterId);
-        setTimetableSlots(data);
-      } catch (err) {
-        setError(err.message);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    if (semesterId) fetchTimetable();
-  }, [semesterId]);
-
   // Form change handler for modal
   const handleFormChange = (e) => {
     const { name, value } = e.target;
@@ -85,6 +95,7 @@ const WeeklyTimetable = () => {
 
   // Open modal for adding new slot
   const openAddModal = () => {
+    setIsEditing(false);
     setSlotForm({
       dayOfWeek: "MONDAY",
       startTime: "09:00",
@@ -97,15 +108,87 @@ const WeeklyTimetable = () => {
     setIsModalOpen(true);
   };
 
+  // Open modal for editing existing slot
+  const openEditModal = (slot) => {
+    setIsEditing(true);
+    setSlotForm({
+      dayOfWeek: slot.dayOfWeek || "MONDAY",
+      startTime: slot.startTime?.slice(0, 5) || "09:00",
+      endTime: slot.endTime?.slice(0, 5) || "10:00",
+      sessionType: slot.sessionType || "LECTURE",
+      CourseId: slot.CourseId || "",
+      InstructorId: slot.InstructorId || "",
+      LectureHallId: slot.LectureHallId || "",
+    });
+    setIsModalOpen(true);
+  };
+
   // Close modal
   const closeModal = () => {
     setIsModalOpen(false);
+    setIsEditing(false);
   };
 
-  const handleCreateSlot = (e) => {
+  // Create new slot
+  const handleCreateSlot = async (e) => {
     e.preventDefault();
-    console.log("Creating slot:", slotForm);
-    setIsModalOpen(false);
+    setSaving(true);
+    try {
+      const payload = {
+        ...slotForm,
+        SemesterId: Number(semesterId),
+        CourseId: slotForm.CourseId ? Number(slotForm.CourseId) : null,
+        InstructorId: slotForm.InstructorId ? Number(slotForm.InstructorId) : null,
+        LectureHallId: slotForm.LectureHallId ? Number(slotForm.LectureHallId) : null,
+      };
+      await api.createTimetableSlot(payload);
+      await loadTimetable();
+      setIsModalOpen(false);
+    } catch (err) {
+      alert("Error creating slot: " + err.message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // Update existing slot
+  const handleUpdateSlot = async (e) => {
+    e.preventDefault();
+    if (!selectedSlot?.id) return;
+    setSaving(true);
+    try {
+      const payload = {
+        ...slotForm,
+        SemesterId: Number(semesterId),
+        CourseId: slotForm.CourseId ? Number(slotForm.CourseId) : null,
+        InstructorId: slotForm.InstructorId ? Number(slotForm.InstructorId) : null,
+        LectureHallId: slotForm.LectureHallId ? Number(slotForm.LectureHallId) : null,
+      };
+      await api.updateTimetableSlot(selectedSlot.id, payload);
+      await loadTimetable();
+      setIsModalOpen(false);
+      setSelectedSlot(null);
+    } catch (err) {
+      alert("Error updating slot: " + err.message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // Delete slot
+  const handleDeleteSlot = async () => {
+    if (!selectedSlot?.id) return;
+    if (!window.confirm("Are you sure you want to delete this slot?")) return;
+    setSaving(true);
+    try {
+      await api.deleteTimetableSlot(selectedSlot.id);
+      await loadTimetable();
+      setSelectedSlot(null);
+    } catch (err) {
+      alert("Error deleting slot: " + err.message);
+    } finally {
+      setSaving(false);
+    }
   };
 
   const formatDate = (date) =>
@@ -282,9 +365,44 @@ const WeeklyTimetable = () => {
         </div>
       </header>
 
-      <div className="flex flex-col lg:flex-row h-[calc(100vh-4rem)] overflow-hidden">
-        {/* Sidebar */}
-        <aside className="w-64 bg-white dark:bg-gray-900 border-r border-[#e7ebf3] dark:border-gray-800 flex flex-col">
+      {/* Breadcrumbs - Mobile and Desktop */}
+      <div className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 px-4 sm:px-6 py-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2 text-sm">
+            <button
+              onClick={() => navigate("/")}
+              className="text-blue-600 hover:underline flex items-center gap-1"
+            >
+              <span className="material-symbols-outlined text-sm">home</span>
+              Home
+            </button>
+            <span className="text-gray-400">/</span>
+            {yearLabel && (
+              <>
+                <button
+                  onClick={() => navigate(`/semesters/${yearId}`)}
+                  className="text-blue-600 hover:underline"
+                >
+                  {yearLabel}
+                </button>
+                <span className="text-gray-400">/</span>
+              </>
+            )}
+            <span className="text-gray-600 dark:text-gray-400">{semesterName}</span>
+          </div>
+          {/* Mobile sidebar toggle */}
+          <button
+            onClick={() => setSidebarOpen(!sidebarOpen)}
+            className="lg:hidden p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800"
+          >
+            <span className="material-symbols-outlined">menu</span>
+          </button>
+        </div>
+      </div>
+
+      <div className="flex flex-col lg:flex-row h-[calc(100vh-7rem)] overflow-hidden">
+        {/* Sidebar - Hidden on mobile unless toggled */}
+        <aside className={`${sidebarOpen ? 'block' : 'hidden'} lg:block w-64 bg-white dark:bg-gray-900 border-r border-[#e7ebf3] dark:border-gray-800 flex flex-col absolute lg:relative z-40 h-full lg:h-auto`}>
           <div className="p-6 flex-1 flex flex-col gap-6">
             <div>
               <h3 className="text-xs font-bold uppercase tracking-wide text-gray-500 mb-3">
@@ -331,21 +449,21 @@ const WeeklyTimetable = () => {
                   <span>Add Slot</span>
                 </button>
 
-                <a
-                  href="/modules"
-                  className="flex items-center gap-3 px-4 py-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-[#0d121b] dark:text-white rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 transition-all font-medium"
+                <button
+                  onClick={() => navigate(`/modules/${yearId}/${semesterId}`, { state: { yearLabel, semesterName, yearId, semesterId } })}
+                  className="w-full flex items-center gap-3 px-4 py-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-[#0d121b] dark:text-white rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 transition-all font-medium"
                 >
                   <span className="material-symbols-outlined">book</span>
                   <span>Modules</span>
-                </a>
+                </button>
 
-                <a
-                  href="/instructors"
-                  className="flex items-center gap-3 px-4 py-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-[#0d121b] dark:text-white rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 transition-all font-medium"
+                <button
+                  onClick={() => navigate(`/instructors/${yearId}/${semesterId}`, { state: { yearLabel, semesterName, yearId, semesterId } })}
+                  className="w-full flex items-center gap-3 px-4 py-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-[#0d121b] dark:text-white rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 transition-all font-medium"
                 >
                   <span className="material-symbols-outlined">groups</span>
                   <span>Instructors</span>
-                </a>
+                </button>
               </div>
             </div>
           </div>
@@ -541,13 +659,21 @@ const WeeklyTimetable = () => {
                 </div>
 
                 <div className="pt-4 flex flex-col gap-3 border-t border-gray-100 dark:border-gray-800">
-                  <button className="w-full bg-primary-blue text-white py-3 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-blue-700 transition-colors shadow-md">
-                    <span className="material-symbols-outlined">save</span>
-                    Update Slot
+                  <button
+                    onClick={() => openEditModal(selectedSlot)}
+                    disabled={saving}
+                    className="w-full bg-primary-blue text-white py-3 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-blue-700 transition-colors shadow-md disabled:opacity-50"
+                  >
+                    <span className="material-symbols-outlined">edit</span>
+                    Edit Slot
                   </button>
-                  <button className="w-full bg-red-50 text-red-600 dark:bg-red-900/20 dark:text-red-400 py-3 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-red-100 dark:hover:bg-red-900/40 transition-colors">
+                  <button
+                    onClick={handleDeleteSlot}
+                    disabled={saving}
+                    className="w-full bg-red-50 text-red-600 dark:bg-red-900/20 dark:text-red-400 py-3 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-red-100 dark:hover:bg-red-900/40 transition-colors disabled:opacity-50"
+                  >
                     <span className="material-symbols-outlined">delete</span>
-                    Delete Slot
+                    {saving ? "Deleting..." : "Delete Slot"}
                   </button>
                 </div>
               </div>
@@ -568,11 +694,11 @@ const WeeklyTimetable = () => {
               <div className="flex items-center gap-3">
                 <div className="size-10 bg-primary/10 rounded-xl flex items-center justify-center text-primary">
                   <span className="material-symbols-outlined font-bold">
-                    add_box
+                    {isEditing ? "edit" : "add_box"}
                   </span>
                 </div>
                 <h2 className="text-xl font-black tracking-tight">
-                  Add New Slot
+                  {isEditing ? "Edit Slot" : "Add New Slot"}
                 </h2>
               </div>
               <button
@@ -583,7 +709,7 @@ const WeeklyTimetable = () => {
               </button>
             </div>
 
-            <form onSubmit={handleCreateSlot} className="p-8 space-y-6">
+            <form onSubmit={isEditing ? handleUpdateSlot : handleCreateSlot} className="p-8 space-y-6">
               <div>
                 <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">
                   Module / Course
@@ -714,15 +840,17 @@ const WeeklyTimetable = () => {
                 <button
                   type="button"
                   onClick={closeModal}
-                  className="px-6 py-2.5 rounded-xl text-sm font-bold text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-800 transition-colors"
+                  disabled={saving}
+                  className="px-6 py-2.5 rounded-xl text-sm font-bold text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-800 transition-colors disabled:opacity-50"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-8 py-2.5 bg-blue-500 text-white rounded-xl text-sm font-bold shadow-lg shadow-primary/25 hover:bg-blue-700 active:scale-95 transition-all"
+                  disabled={saving}
+                  className="px-8 py-2.5 bg-blue-500 text-white rounded-xl text-sm font-bold shadow-lg shadow-primary/25 hover:bg-blue-700 active:scale-95 transition-all disabled:opacity-50"
                 >
-                  Create Slot
+                  {saving ? "Saving..." : isEditing ? "Update Slot" : "Create Slot"}
                 </button>
               </div>
             </form>

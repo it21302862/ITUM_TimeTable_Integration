@@ -104,11 +104,47 @@ export const api = {
     return response.json();
   },
 
+  // Get timetable slots by instructor (optionally filtered by semester)
+  async getTimetableSlotsByInstructor(instructorId, options = {}) {
+    const { semesterId } = options;
+    let url = `${API_BASE_URL}/timetable/instructor/${instructorId}`;
+    
+    if (semesterId) {
+      url += `?semesterId=${semesterId}`;
+    }
+    
+    const response = await fetch(url);
+    if (!response.ok) {
+      throw new Error("Failed to fetch instructor timetable slots");
+    }
+    return response.json();
+  },
+
   // Courses / Modules
-  async getCourses() {
-    const response = await fetch(`${API_BASE_URL}/courses`);
+  async getCourses(options = {}) {
+    const { semesterId, yearId } = options;
+    let url = `${API_BASE_URL}/courses`;
+    
+    const params = new URLSearchParams();
+    if (semesterId) params.append("semesterId", semesterId);
+    if (yearId) params.append("yearId", yearId);
+    
+    if (params.toString()) {
+      url += `?${params.toString()}`;
+    }
+    
+    const response = await fetch(url);
     if (!response.ok) {
       throw new Error("Failed to fetch courses");
+    }
+    return response.json();
+  },
+
+
+  async getCoursesBySemester(semesterId) {
+    const response = await fetch(`${API_BASE_URL}/courses/by-semester/${semesterId}`);
+    if (!response.ok) {
+      throw new Error("Failed to fetch courses by semester");
     }
     return response.json();
   },
@@ -208,10 +244,19 @@ export const api = {
     return response.json();
   },
 
-  async getModulesByInstructor(instructorId) {
-    const response = await fetch(
-      `${API_BASE_URL}/courses/by-instructor/${instructorId}`,
-    );
+  async getModulesByInstructor(instructorId, options = {}) {
+    const { semesterId, yearId } = options;
+    let url = `${API_BASE_URL}/courses/by-instructor/${instructorId}`;
+    
+    const params = new URLSearchParams();
+    if (semesterId) params.append("semesterId", semesterId);
+    if (yearId) params.append("yearId", yearId);
+    
+    if (params.toString()) {
+      url += `?${params.toString()}`;
+    }
+    
+    const response = await fetch(url);
     if (!response.ok) {
       throw new Error("Failed to fetch modules for instructor");
     }

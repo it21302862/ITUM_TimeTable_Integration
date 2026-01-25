@@ -239,10 +239,11 @@ const SelectSemester = () => {
                     <div
                       key={semester.id}
                       onClick={() =>
-                        navigate(`/timetable/${semester.id}`, {
+                        navigate(`/timetable/${yearId}/${semester.id}`, {
                           state: {
                             semesterName: name,
                             yearLabel: yearLabel,
+                            yearId: yearId,
                           },
                         })
                       }

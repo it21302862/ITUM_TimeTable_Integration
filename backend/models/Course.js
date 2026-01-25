@@ -3,7 +3,6 @@ export default (sequelize, DataTypes) => {
     code: {
       type: DataTypes.STRING,
       allowNull: false,
-      unique: true
     },
 
     name: {
@@ -27,6 +26,18 @@ export default (sequelize, DataTypes) => {
     },
 
     moduleCoordinatorId: {
+      type: DataTypes.INTEGER,
+      allowNull: true
+    },
+
+    // Link to Semester (optional - courses can be semester-specific)
+    SemesterId: {
+      type: DataTypes.INTEGER,
+      allowNull: true
+    },
+
+    // Link to Academic Year (optional - courses can be year-specific)
+    AcademicYearId: {
       type: DataTypes.INTEGER,
       allowNull: true
     }
