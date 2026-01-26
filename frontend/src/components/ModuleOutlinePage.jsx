@@ -303,7 +303,11 @@ const ModuleOutlinePage = () => {
                 <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">
                   Editing For Module
                 </label>
-                <select className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm font-semibold text-slate-900 dark:text-white focus:ring-blue-500 focus:border-transparent">
+                <select
+                  className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 
+  rounded-lg text-sm font-semibold text-slate-900 dark:text-white 
+  px-4 py-3 focus:ring-blue-500 focus:border-transparent"
+                >
                   <option>
                     {courseData.code}: {courseData.name}
                   </option>
