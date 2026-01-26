@@ -35,6 +35,19 @@ TimetableSlot.belongsTo(Course);
 TimetableSlot.belongsTo(Instructor);
 Instructor.hasMany(TimetableSlot);
 
+// Many-to-many relationship for supportive instructors
+TimetableSlot.belongsToMany(Instructor, {
+  through: "TimetableSlot_SupportiveInstructor",
+  as: "SupportiveInstructors",
+  foreignKey: "TimetableSlotId"
+});
+
+Instructor.belongsToMany(TimetableSlot, {
+  through: "TimetableSlot_SupportiveInstructor",
+  as: "SupportiveInstructorFor",
+  foreignKey: "InstructorId"
+});
+
 TimetableSlot.belongsTo(LectureHall);
 LectureHall.hasMany(TimetableSlot);
 

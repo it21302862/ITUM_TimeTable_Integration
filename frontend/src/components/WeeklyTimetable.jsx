@@ -73,6 +73,7 @@ const WeeklyTimetable = () => {
     sessionType: "LECTURE",
     CourseId: "",
     InstructorId: "",
+    SupportiveInstructorIds: [],
     LectureHallId: "",
   });
 
@@ -93,6 +94,18 @@ const WeeklyTimetable = () => {
     setSlotForm((prev) => ({ ...prev, [name]: value }));
   };
 
+  // Handle supportive instructor selection
+  const handleSupportiveInstructorChange = (instructorId) => {
+    setSlotForm((prev) => {
+      const ids = prev.SupportiveInstructorIds || [];
+      if (ids.includes(instructorId)) {
+        return { ...prev, SupportiveInstructorIds: ids.filter(id => id !== instructorId) };
+      } else {
+        return { ...prev, SupportiveInstructorIds: [...ids, instructorId] };
+      }
+    });
+  };
+
   // Open modal for adding new slot
   const openAddModal = () => {
     setIsEditing(false);
@@ -103,6 +116,7 @@ const WeeklyTimetable = () => {
       sessionType: "LECTURE",
       CourseId: "",
       InstructorId: "",
+      SupportiveInstructorIds: [],
       LectureHallId: "",
     });
     setIsModalOpen(true);
@@ -118,6 +132,7 @@ const WeeklyTimetable = () => {
       sessionType: slot.sessionType || "LECTURE",
       CourseId: slot.CourseId || "",
       InstructorId: slot.InstructorId || "",
+      SupportiveInstructorIds: slot.SupportiveInstructors?.map(i => i.id) || [],
       LectureHallId: slot.LectureHallId || "",
     });
     setIsModalOpen(true);
@@ -139,6 +154,7 @@ const WeeklyTimetable = () => {
         SemesterId: Number(semesterId),
         CourseId: slotForm.CourseId ? Number(slotForm.CourseId) : null,
         InstructorId: slotForm.InstructorId ? Number(slotForm.InstructorId) : null,
+        SupportiveInstructorIds: slotForm.SupportiveInstructorIds.map(id => Number(id)),
         LectureHallId: slotForm.LectureHallId ? Number(slotForm.LectureHallId) : null,
       };
       await api.createTimetableSlot(payload);
@@ -162,6 +178,7 @@ const WeeklyTimetable = () => {
         SemesterId: Number(semesterId),
         CourseId: slotForm.CourseId ? Number(slotForm.CourseId) : null,
         InstructorId: slotForm.InstructorId ? Number(slotForm.InstructorId) : null,
+        SupportiveInstructorIds: slotForm.SupportiveInstructorIds.map(id => Number(id)),
         LectureHallId: slotForm.LectureHallId ? Number(slotForm.LectureHallId) : null,
       };
       await api.updateTimetableSlot(selectedSlot.id, payload);
@@ -655,6 +672,25 @@ const WeeklyTimetable = () => {
                         </span>
                       </div>
                     </div>
+                    {selectedSlot.SupportiveInstructors && selectedSlot.SupportiveInstructors.length > 0 && (
+                      <div className="flex items-start gap-3">
+                        <span className="material-symbols-outlined text-gray-400 mt-0.5">
+                          groups
+                        </span>
+                        <div className="flex flex-col flex-1">
+                          <span className="text-gray-400 text-[11px]">
+                            Supportive Instructors ({selectedSlot.SupportiveInstructors.length})
+                          </span>
+                          <div className="flex flex-wrap gap-2 mt-1">
+                            {selectedSlot.SupportiveInstructors.map((instructor) => (
+                              <span key={instructor.id} className="inline-block bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 text-xs font-medium px-2 py-1 rounded-md">
+                                {instructor.name}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -688,40 +724,49 @@ const WeeklyTimetable = () => {
 
       {/* Add New Slot Modal */}
       {isModalOpen && (
-        <div className="fixed inset-0 bg-gray-900/60 backdrop-blur-sm z-[100] flex items-center justify-center">
-          <div className="bg-white dark:bg-gray-900 w-full max-w-lg rounded-2xl shadow-2xl border border-[#e7ebf3] dark:border-gray-800 overflow-hidden">
-            <div className="px-8 py-6 border-b border-gray-100 dark:border-gray-800 flex justify-between items-center bg-gray-50/50 dark:bg-gray-800/50">
+        <div className="fixed inset-0 bg-gray-900/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-gray-900 w-full max-w-2xl rounded-2xl shadow-2xl border border-[#e7ebf3] dark:border-gray-800 overflow-hidden max-h-[90vh] overflow-y-auto">
+            {/* Header */}
+            <div className="px-6 sm:px-8 py-5 border-b border-gray-100 dark:border-gray-800 bg-gradient-to-r from-blue-50 to-blue-50/50 dark:from-gray-800/50 dark:to-gray-800/30 flex justify-between items-center sticky top-0 z-10">
               <div className="flex items-center gap-3">
-                <div className="size-10 bg-primary/10 rounded-xl flex items-center justify-center text-primary">
-                  <span className="material-symbols-outlined font-bold">
-                    {isEditing ? "edit" : "add_box"}
+                <div className="size-10 bg-blue-600 rounded-xl flex items-center justify-center text-white shadow-lg">
+                  <span className="material-symbols-outlined text-lg">
+                    {isEditing ? "edit_calendar" : "add_circle"}
                   </span>
                 </div>
-                <h2 className="text-xl font-black tracking-tight">
-                  {isEditing ? "Edit Slot" : "Add New Slot"}
-                </h2>
+                <div>
+                  <h2 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white">
+                    {isEditing ? "Edit Time Slot" : "Create New Slot"}
+                  </h2>
+                  <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-0.5">
+                    {isEditing ? "Update slot details" : "Add a new timetable entry"}
+                  </p>
+                </div>
               </div>
               <button
                 onClick={closeModal}
-                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
+                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors p-1"
               >
                 <span className="material-symbols-outlined">close</span>
               </button>
             </div>
 
-            <form onSubmit={isEditing ? handleUpdateSlot : handleCreateSlot} className="p-8 space-y-6">
+            {/* Form Content */}
+            <form onSubmit={isEditing ? handleUpdateSlot : handleCreateSlot} className="p-6 sm:p-8 space-y-6">
+              {/* Course Selection */}
               <div>
-                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">
+                <label className="flex items-center gap-2 text-sm font-bold text-gray-700 dark:text-gray-300 mb-3">
+                  <span className="material-symbols-outlined text-base text-blue-600">book</span>
                   Module / Course
                 </label>
                 <select
                   name="CourseId"
                   value={slotForm.CourseId}
                   onChange={handleFormChange}
-                  className="w-full rounded-xl border-gray-200 dark:border-gray-700 dark:bg-gray-800 text-sm focus:ring-primary focus:border-primary py-3"
+                  className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm font-medium focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                 >
                   <option disabled selected>
-                    Select a module
+                    Select a module...
                   </option>
                   {courses.map((course) => (
                     <option key={course.id} value={course.id}>
@@ -731,16 +776,18 @@ const WeeklyTimetable = () => {
                 </select>
               </div>
 
-              <div className="grid grid-cols-2 gap-6">
+              {/* Session Type and Hall */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                 <div>
-                  <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">
+                  <label className="flex items-center gap-2 text-sm font-bold text-gray-700 dark:text-gray-300 mb-3">
+                    <span className="material-symbols-outlined text-base text-blue-600">category</span>
                     Session Type
                   </label>
                   <select
                     name="sessionType"
                     value={slotForm.sessionType}
                     onChange={handleFormChange}
-                    className="w-full rounded-xl border-gray-200 dark:border-gray-700 dark:bg-gray-800 text-sm focus:ring-primary focus:border-primary py-3"
+                    className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm font-medium focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                   >
                     <option>LECTURE</option>
                     <option>PRACTICAL</option>
@@ -750,58 +797,63 @@ const WeeklyTimetable = () => {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">
+                  <label className="flex items-center gap-2 text-sm font-bold text-gray-700 dark:text-gray-300 mb-3">
+                    <span className="material-symbols-outlined text-base text-blue-600">location_on</span>
                     Lecture Hall / Lab
                   </label>
                   <select
                     name="LectureHallId"
                     value={slotForm.LectureHallId}
                     onChange={handleFormChange}
-                    className="w-full rounded-xl border-gray-200 dark:border-gray-700 dark:bg-gray-800 text-sm focus:ring-primary focus:border-primary py-3"
+                    className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm font-medium focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                   >
                     <option disabled selected>
-                      Select Location
+                      Select location...
                     </option>
                     {lectureHalls.map((lecturehall) => (
-                    <option key={lecturehall.id} value={lecturehall.id}>
-                      {lecturehall.name}
-                    </option>
-                  ))}
+                      <option key={lecturehall.id} value={lecturehall.id}>
+                        {lecturehall.name}
+                      </option>
+                    ))}
                   </select>
                 </div>
               </div>
 
-              <div>
-                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">
-                  Instructor
-                </label>
-                <select
-                  name="InstructorId"
-                  value={slotForm.InstructorId}
-                  onChange={handleFormChange}
-                  className="w-full rounded-xl border-gray-200 dark:border-gray-700 dark:bg-gray-800 text-sm focus:ring-primary focus:border-primary py-3"
-                >
-                  <option disabled selected>
-                    Assign Instructor
-                  </option>
-                  {instructors.map((instructor) => (
-                    <option key={instructor.id} value={instructor.id}>
-                      {instructor.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="grid grid-cols-3 gap-4 p-5 bg-gray-50 dark:bg-gray-800/50 rounded-2xl border border-gray-100 dark:border-gray-800">
+              {/* Instructors */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                 <div>
-                  <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">
+                  <label className="flex items-center gap-2 text-sm font-bold text-gray-700 dark:text-gray-300 mb-3">
+                    <span className="material-symbols-outlined text-base text-blue-600">person</span>
+                    Main Instructor
+                  </label>
+                  <select
+                    name="InstructorId"
+                    value={slotForm.InstructorId}
+                    onChange={handleFormChange}
+                    className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm font-medium focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                  >
+                    <option disabled selected>
+                      Assign instructor...
+                    </option>
+                    {instructors.map((instructor) => (
+                      <option key={instructor.id} value={instructor.id}>
+                        {instructor.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Schedule Timing */}
+                <div>
+                  <label className="flex items-center gap-2 text-sm font-bold text-gray-700 dark:text-gray-300 mb-3">
+                    <span className="material-symbols-outlined text-base text-blue-600">schedule</span>
                     Day of Week
                   </label>
                   <select
                     name="dayOfWeek"
                     value={slotForm.dayOfWeek}
                     onChange={handleFormChange}
-                    className="w-full bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700 rounded-lg text-sm font-bold focus:ring-primary uppercase py-2 px-3"
+                    className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm font-medium focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all uppercase"
                   >
                     <option>MONDAY</option>
                     <option>TUESDAY</option>
@@ -810,46 +862,96 @@ const WeeklyTimetable = () => {
                     <option>FRIDAY</option>
                   </select>
                 </div>
-                <div>
-                  <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">
-                    Start Time
-                  </label>
-                  <input
-                    name="startTime"
-                    type="time"
-                    value={slotForm.startTime}
-                    onChange={handleFormChange}
-                    className="w-full bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700 rounded-lg text-sm font-bold focus:ring-primary py-2 px-3"
-                  />
-                </div>
-                <div>
-                  <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">
-                    End Time
-                  </label>
-                  <input
-                    name="endTime"
-                    type="time"
-                    value={slotForm.endTime}
-                    onChange={handleFormChange}
-                    className="w-full bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700 rounded-lg text-sm font-bold focus:ring-primary py-2 px-3"
-                  />
+              </div>
+
+              {/* Time Selection */}
+              <div>
+                <label className="flex items-center gap-2 text-sm font-bold text-gray-700 dark:text-gray-300 mb-3">
+                  <span className="material-symbols-outlined text-base text-blue-600">access_time</span>
+                  Session Time
+                </label>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <div className="text-xs text-gray-500 dark:text-gray-400 mb-2 font-medium">Start Time</div>
+                    <input
+                      name="startTime"
+                      type="time"
+                      value={slotForm.startTime}
+                      onChange={handleFormChange}
+                      className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm font-medium focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                    />
+                  </div>
+                  <div>
+                    <div className="text-xs text-gray-500 dark:text-gray-400 mb-2 font-medium">End Time</div>
+                    <input
+                      name="endTime"
+                      type="time"
+                      value={slotForm.endTime}
+                      onChange={handleFormChange}
+                      className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm font-medium focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                    />
+                  </div>
                 </div>
               </div>
 
-              <div className="px-8 py-6 bg-gray-50 dark:bg-gray-800/30 border-t border-gray-100 dark:border-gray-800 flex justify-end gap-3">
+              {/* Supportive Instructors */}
+              <div>
+                <label className="flex items-center gap-2 text-sm font-bold text-gray-700 dark:text-gray-300 mb-3">
+                  <span className="material-symbols-outlined text-base text-blue-600">group_add</span>
+                  Supportive Instructors <span className="text-gray-400 font-normal">(Optional)</span>
+                </label>
+                <div className="border border-gray-300 dark:border-gray-600 rounded-lg overflow-hidden">
+                  <div className="max-h-64 overflow-y-auto bg-gray-50 dark:bg-gray-800/50">
+                    {instructors.length > 0 ? (
+                      instructors.map((instructor) => (
+                        <label
+                          key={instructor.id}
+                          className="flex items-center gap-3 px-4 py-3 hover:bg-white dark:hover:bg-gray-700 border-b border-gray-200 dark:border-gray-700 last:border-b-0 cursor-pointer transition-colors"
+                        >
+                          <input
+                            type="checkbox"
+                            checked={slotForm.SupportiveInstructorIds.includes(instructor.id)}
+                            onChange={() => handleSupportiveInstructorChange(instructor.id)}
+                            className="rounded w-4 h-4 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                          />
+                          <span className="text-sm font-medium text-gray-700 dark:text-gray-300 flex-1">
+                            {instructor.name}
+                          </span>
+                        </label>
+                      ))
+                    ) : (
+                      <div className="px-4 py-6 text-center text-sm text-gray-400">
+                        No instructors available
+                      </div>
+                    )}
+                  </div>
+                </div>
+                {slotForm.SupportiveInstructorIds.length > 0 && (
+                  <div className="mt-3 flex items-center gap-2 text-xs font-medium text-blue-600 dark:text-blue-400">
+                    <span className="material-symbols-outlined text-sm">check_circle</span>
+                    {slotForm.SupportiveInstructorIds.length} instructor{slotForm.SupportiveInstructorIds.length !== 1 ? 's' : ''} selected
+                  </div>
+                )}
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex justify-end gap-3 pt-6 border-t border-gray-100 dark:border-gray-800 mt-8">
                 <button
                   type="button"
                   onClick={closeModal}
                   disabled={saving}
-                  className="px-6 py-2.5 rounded-xl text-sm font-bold text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-800 transition-colors disabled:opacity-50"
+                  className="px-6 py-2.5 rounded-lg text-sm font-bold text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={saving}
-                  className="px-8 py-2.5 bg-blue-500 text-white rounded-xl text-sm font-bold shadow-lg shadow-primary/25 hover:bg-blue-700 active:scale-95 transition-all disabled:opacity-50"
+                  className="px-8 py-2.5 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white rounded-lg text-sm font-bold shadow-lg shadow-blue-500/30 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                 >
+                  <span className="material-symbols-outlined text-base">
+                    {saving ? "hourglass_empty" : isEditing ? "save" : "add"}
+                  </span>
                   {saving ? "Saving..." : isEditing ? "Update Slot" : "Create Slot"}
                 </button>
               </div>

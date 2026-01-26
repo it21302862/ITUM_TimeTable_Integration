@@ -3,12 +3,20 @@ import { Op } from "sequelize";
 
 export async function create(req, res) {
   try {
-    const slot = await TimetableSlot.create(req.body);
+    const { SupportiveInstructorIds, ...slotData } = req.body;
+    const slot = await TimetableSlot.create(slotData);
+    
+    // Add supportive instructors if provided
+    if (SupportiveInstructorIds && SupportiveInstructorIds.length > 0) {
+      await slot.addSupportiveInstructors(SupportiveInstructorIds);
+    }
+    
     // Return the created slot with associations
     const createdSlot = await TimetableSlot.findByPk(slot.id, {
       include: [
         { model: Course },
         { model: Instructor },
+        { model: Instructor, as: "SupportiveInstructors", through: { attributes: [] } },
         { model: LectureHall }
       ]
     });
@@ -29,6 +37,7 @@ export async function getBySemester(req, res) {
           { model: Instructor, as: "moduleLeader" },
         ]},
         { model: Instructor },
+        { model: Instructor, as: "SupportiveInstructors", through: { attributes: [] } },
         { model: LectureHall }
       ],
       order: [["dayOfWeek", "ASC"], ["startTime", "ASC"]]
@@ -46,6 +55,7 @@ export async function getOne(req, res) {
       include: [
         { model: Course },
         { model: Instructor },
+        { model: Instructor, as: "SupportiveInstructors", through: { attributes: [] } },
         { model: LectureHall },
         { model: Semester }
       ]
@@ -62,17 +72,26 @@ export async function getOne(req, res) {
 
 export async function update(req, res) {
   try {
-    const [updated] = await TimetableSlot.update(req.body, {
+    const { SupportiveInstructorIds, ...slotData } = req.body;
+    const [updated] = await TimetableSlot.update(slotData, {
       where: { id: req.params.id }
     });
     if (!updated) {
       return res.status(404).json({ message: "Timetable slot not found" });
     }
+    
+    // Update supportive instructors if provided
+    const slot = await TimetableSlot.findByPk(req.params.id);
+    if (SupportiveInstructorIds !== undefined) {
+      await slot.setSupportiveInstructors(SupportiveInstructorIds || []);
+    }
+    
     // Return the updated slot with associations
     const updatedSlot = await TimetableSlot.findByPk(req.params.id, {
       include: [
         { model: Course },
         { model: Instructor },
+        { model: Instructor, as: "SupportiveInstructors", through: { attributes: [] } },
         { model: LectureHall }
       ]
     });
@@ -132,6 +151,7 @@ export async function getByInstructor(req, res) {
       include: [
         { model: Course },
         { model: Instructor },
+        { model: Instructor, as: "SupportiveInstructors", through: { attributes: [] } },
         { model: LectureHall },
         { model: Semester }
       ],
