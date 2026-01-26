@@ -326,6 +326,13 @@ const ModulesPage = () => {
                   <span className="text-sm font-medium">Modules</span>
                 </button>
                 <button
+                  onClick={() => navigate(`/module-outlines/${yearId}/${semesterId}`, { state: { yearLabel, semesterName } })}
+                  className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-600 dark:text-gray-400"
+                >
+                  <span className="material-symbols-outlined text-xl">description</span>
+                  <span className="text-sm font-medium">Module Outline</span>
+                </button>
+                <button
                   onClick={() => navigate("/instructors")}
                   className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-600 dark:text-gray-400"
                 >

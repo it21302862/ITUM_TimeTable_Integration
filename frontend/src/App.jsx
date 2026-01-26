@@ -4,6 +4,8 @@ import SelectSemester from "./components/SelectSemester";
 import WeeklyTimetable from "./components/WeeklyTimetable";
 import ModulesPage from "./components/ModulesPage";
 import InstructorsPage from "./components/InstructorsPage";
+import ModuleOutlinesList from "./components/ModuleOutlinesList";
+import ModuleOutlinePage from "./components/ModuleOutlinePage";
 
 function App() {
   return (
@@ -18,6 +20,10 @@ function App() {
         <Route path="/modules" element={<ModulesPage />} />
         <Route path="/instructors/:yearId/:semesterId" element={<InstructorsPage />} />
         <Route path="/instructors" element={<InstructorsPage />} />
+        {/* Module Outlines routes */}
+        <Route path="/module-outlines/:yearId/:semesterId" element={<ModuleOutlinesList />} />
+        <Route path="/module-outlines" element={<ModuleOutlinesList />} />
+        <Route path="/module-outline/:courseId" element={<ModuleOutlinePage />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>
@@ -25,3 +31,4 @@ function App() {
 }
 
 export default App;
+

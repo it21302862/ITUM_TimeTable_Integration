@@ -8,6 +8,7 @@ import InstructorModel from "./Instructor.js";
 import LectureHallModel from "./LectureHall.js";
 import TimetableSlotModel from "./TimetableSlot.js";
 import SemesterEventModel from "./SemesterEvent.js";
+import ModuleOutlineModel from "./ModuleOutline.js";
 
 const AcademicYear = AcademicYearModel(sequelize, DataTypes);
 const Semester = SemesterModel(sequelize, DataTypes);
@@ -16,6 +17,7 @@ const Instructor = InstructorModel(sequelize, DataTypes);
 const LectureHall = LectureHallModel(sequelize, DataTypes);
 const TimetableSlot = TimetableSlotModel(sequelize, DataTypes);
 const SemesterEvent = SemesterEventModel(sequelize, DataTypes);
+const ModuleOutline = ModuleOutlineModel(sequelize, DataTypes);
 
 // Relations
 AcademicYear.hasMany(Semester);
@@ -58,6 +60,10 @@ Semester.hasMany(Course, { foreignKey: "SemesterId" });
 Course.belongsTo(AcademicYear, { foreignKey: "AcademicYearId" });
 AcademicYear.hasMany(Course, { foreignKey: "AcademicYearId" });
 
+// ModuleOutline relations
+Course.hasOne(ModuleOutline, { foreignKey: "courseId" });
+ModuleOutline.belongsTo(Course, { foreignKey: "courseId" });
+
 export {
   sequelize,
   AcademicYear,
@@ -67,4 +73,5 @@ export {
   LectureHall,
   TimetableSlot,
   SemesterEvent,
+  ModuleOutline,
 };

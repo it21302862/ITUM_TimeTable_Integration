@@ -505,7 +505,7 @@ const InstructorsPage = () => {
 
             {/* Instructor Cards Grid */}
             <div className="h-[calc(100vh-280px)] overflow-y-auto pr-2">
-              <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 gap-6">
                 {sortedInstructors.map((ins) => {
                   const color = getColorClass(ins.name);
 

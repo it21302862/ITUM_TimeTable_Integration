@@ -7,6 +7,7 @@ import semesterPlanRoutes from "./routes/semesterPlan.routes.js";
 import courseRoutes from "./routes/course.routes.js";
 import lectureHallRoutes from "./routes/lectureHall.routes.js";
 import instructorRoutes from "./routes/instructor.routes.js";
+import moduleOutlineRoutes from "./routes/moduleOutline.routes.js";
 
 const app = express();
 app.use(cors());
@@ -20,6 +21,7 @@ app.use("/api/semester-plan", semesterPlanRoutes);
 app.use("/api/courses", courseRoutes);
 app.use("/api/lecture-halls", lectureHallRoutes);
 app.use("/api/instructors", instructorRoutes);
+app.use("/api/module-outlines", moduleOutlineRoutes);
 
 
 export const listen = (port, callback) => {

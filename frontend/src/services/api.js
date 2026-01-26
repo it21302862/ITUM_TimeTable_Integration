@@ -262,4 +262,67 @@ export const api = {
     }
     return response.json();
   },
+
+  // Module Outlines
+  async getModuleOutlines() {
+    const response = await fetch(`${API_BASE_URL}/module-outlines`);
+    if (!response.ok) {
+      throw new Error("Failed to fetch module outlines");
+    }
+    return response.json();
+  },
+
+  async getModuleOutlineById(id) {
+    const response = await fetch(`${API_BASE_URL}/module-outlines/${id}`);
+    if (!response.ok) {
+      throw new Error("Failed to fetch module outline");
+    }
+    return response.json();
+  },
+
+  async getModuleOutlineByCourse(courseId) {
+    const response = await fetch(`${API_BASE_URL}/module-outlines/course/${courseId}`);
+    if (!response.ok) {
+      throw new Error("Failed to fetch module outline for course");
+    }
+    return response.json();
+  },
+
+  async createModuleOutline(data) {
+    const response = await fetch(`${API_BASE_URL}/module-outlines`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(data),
+    });
+    if (!response.ok) {
+      throw new Error("Failed to create module outline");
+    }
+    return response.json();
+  },
+
+  async updateModuleOutline(id, data) {
+    const response = await fetch(`${API_BASE_URL}/module-outlines/${id}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(data),
+    });
+    if (!response.ok) {
+      throw new Error("Failed to update module outline");
+    }
+    return response.json();
+  },
+
+  async deleteModuleOutline(id) {
+    const response = await fetch(`${API_BASE_URL}/module-outlines/${id}`, {
+      method: "DELETE",
+    });
+    if (!response.ok) {
+      throw new Error("Failed to delete module outline");
+    }
+    return response.json();
+  },
 };
