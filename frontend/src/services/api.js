@@ -104,15 +104,19 @@ export const api = {
     return response.json();
   },
 
-  // Get timetable slots by instructor (optionally filtered by semester)
+  // Get timetable slots by instructor (optionally filtered by semester and year)
   async getTimetableSlotsByInstructor(instructorId, options = {}) {
-    const { semesterId } = options;
+    const { semesterId, yearId } = options;
     let url = `${API_BASE_URL}/timetable/instructor/${instructorId}`;
-    
-    if (semesterId) {
-      url += `?semesterId=${semesterId}`;
+
+    const params = new URLSearchParams();
+    if (semesterId) params.append("semesterId", semesterId);
+    if (yearId) params.append("yearId", yearId);
+
+    if (params.toString()) {
+      url += `?${params.toString()}`;
     }
-    
+
     const response = await fetch(url);
     if (!response.ok) {
       throw new Error("Failed to fetch instructor timetable slots");

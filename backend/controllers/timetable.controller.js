@@ -1,4 +1,5 @@
 import { TimetableSlot, Course, Instructor, LectureHall, Semester } from "../models/index.js";
+import { Op } from "sequelize";
 
 export async function create(req, res) {
   try {
@@ -97,17 +98,33 @@ export async function remove(req, res) {
   }
 }
 
-// Get timetable slots by instructor (optionally filtered by semester)
+// Get timetable slots by instructor (optionally filtered by semester and year)
 export async function getByInstructor(req, res) {
   try {
     const { instructorId } = req.params;
-    const { semesterId } = req.query;
+    const { semesterId, yearId } = req.query;
 
     const whereClause = { InstructorId: Number(instructorId) };
-    
+
     // If semesterId is provided, filter by it
     if (semesterId) {
       whereClause.SemesterId = Number(semesterId);
+    } else if (yearId) {
+      // If yearId is provided but no semesterId, get all semesters for that year
+      const semesters = await Semester.findAll({
+        where: { AcademicYearId: Number(yearId) },
+        attributes: ["id"],
+      });
+      const semesterIds = semesters.map((s) => s.id);
+      if (semesterIds.length > 0) {
+        whereClause.SemesterId = { [Op.in]: semesterIds };
+      } else {
+        // No semesters found for the year, return empty array
+        return res.json({
+          slots: [],
+          weeklyWorkloadHours: 0
+        });
+      }
     }
 
     const slots = await TimetableSlot.findAll({

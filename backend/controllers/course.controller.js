@@ -162,11 +162,18 @@ export async function getModulesByInstructor(req, res) {
       return res.status(400).json({ message: "Invalid instructor ID" });
     }
 
-    // Get timetable slots for this instructor
-    let timetableWhere = { InstructorId: instructorId };
-    
+    // Build where clause for courses where instructor is assigned in any role
+    let courseWhere = {
+      [Op.or]: [
+        { assignedInstructorId: instructorId },
+        { moduleLeaderId: instructorId },
+        { moduleCoordinatorId: instructorId }
+      ]
+    };
+
+    // Apply semester filtering if provided
     if (semesterId) {
-      timetableWhere.SemesterId = Number(semesterId);
+      courseWhere.SemesterId = Number(semesterId);
     } else if (yearId) {
       // If yearId is provided, get semesters for that year
       const semesters = await Semester.findAll({
@@ -174,29 +181,16 @@ export async function getModulesByInstructor(req, res) {
         attributes: ["id"],
       });
       const semesterIds = semesters.map((s) => s.id);
-      if (semesterIds.length === 0) {
+      if (semesterIds.length > 0) {
+        courseWhere.SemesterId = { [Op.in]: semesterIds };
+      } else {
+        // No semesters found for the year, return empty array
         return res.json([]);
       }
-      timetableWhere.SemesterId = { [Op.in]: semesterIds };
-    }
-
-    // Get unique course IDs from timetable slots
-    const slots = await TimetableSlot.findAll({
-      where: timetableWhere,
-      attributes: ["CourseId"],
-      group: ["CourseId"],
-    });
-
-    const uniqueCourseIds = [
-      ...new Set(slots.map((slot) => slot.CourseId).filter(Boolean)),
-    ];
-
-    if (uniqueCourseIds.length === 0) {
-      return res.json([]);
     }
 
     const courses = await Course.findAll({
-      where: { id: { [Op.in]: uniqueCourseIds } },
+      where: courseWhere,
       attributes: ["id", "code", "name"],
     });
 
