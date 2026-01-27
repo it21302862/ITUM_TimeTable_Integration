@@ -147,15 +147,30 @@ const WeeklyTimetable = () => {
   // Create new slot
   const handleCreateSlot = async (e) => {
     e.preventDefault();
+    
+    // Validation
+    if (!slotForm.CourseId) {
+      alert("Please select a course");
+      return;
+    }
+    if (!slotForm.InstructorId) {
+      alert("Please select a main instructor");
+      return;
+    }
+    if (!slotForm.LectureHallId) {
+      alert("Please select a lecture hall");
+      return;
+    }
+    
     setSaving(true);
     try {
       const payload = {
         ...slotForm,
         SemesterId: Number(semesterId),
-        CourseId: slotForm.CourseId ? Number(slotForm.CourseId) : null,
-        InstructorId: slotForm.InstructorId ? Number(slotForm.InstructorId) : null,
+        CourseId: Number(slotForm.CourseId),
+        InstructorId: Number(slotForm.InstructorId),
         SupportiveInstructorIds: slotForm.SupportiveInstructorIds.map(id => Number(id)),
-        LectureHallId: slotForm.LectureHallId ? Number(slotForm.LectureHallId) : null,
+        LectureHallId: Number(slotForm.LectureHallId),
       };
       await api.createTimetableSlot(payload);
       await loadTimetable();
@@ -171,15 +186,30 @@ const WeeklyTimetable = () => {
   const handleUpdateSlot = async (e) => {
     e.preventDefault();
     if (!selectedSlot?.id) return;
+    
+    // Validation
+    if (!slotForm.CourseId) {
+      alert("Please select a course");
+      return;
+    }
+    if (!slotForm.InstructorId) {
+      alert("Please select a main instructor");
+      return;
+    }
+    if (!slotForm.LectureHallId) {
+      alert("Please select a lecture hall");
+      return;
+    }
+    
     setSaving(true);
     try {
       const payload = {
         ...slotForm,
         SemesterId: Number(semesterId),
-        CourseId: slotForm.CourseId ? Number(slotForm.CourseId) : null,
-        InstructorId: slotForm.InstructorId ? Number(slotForm.InstructorId) : null,
+        CourseId: Number(slotForm.CourseId),
+        InstructorId: Number(slotForm.InstructorId),
         SupportiveInstructorIds: slotForm.SupportiveInstructorIds.map(id => Number(id)),
-        LectureHallId: slotForm.LectureHallId ? Number(slotForm.LectureHallId) : null,
+        LectureHallId: Number(slotForm.LectureHallId),
       };
       await api.updateTimetableSlot(selectedSlot.id, payload);
       await loadTimetable();

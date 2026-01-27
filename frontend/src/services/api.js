@@ -238,6 +238,25 @@ export const api = {
     return response.json();
   },
 
+  async getAvailableInstructors(options = {}) {
+    const { date, semesterId } = options;
+    let url = `${API_BASE_URL}/instructors/available`;
+    
+    const params = new URLSearchParams();
+    if (date) params.append("date", date);
+    if (semesterId) params.append("semesterId", semesterId);
+    
+    if (params.toString()) {
+      url += `?${params.toString()}`;
+    }
+    
+    const response = await fetch(url);
+    if (!response.ok) {
+      throw new Error("Failed to fetch available instructors");
+    }
+    return response.json();
+  },
+
   //get lecture halls
 
   async getLectureHalls() {

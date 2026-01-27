@@ -4,6 +4,7 @@ import SelectSemester from "./components/SelectSemester";
 import WeeklyTimetable from "./components/WeeklyTimetable";
 import ModulesPage from "./components/ModulesPage";
 import InstructorsPage from "./components/InstructorsPage";
+import AvailableInstructorsPage from "./components/AvailableInstructorsPage";
 import ModuleOutlinesList from "./components/ModuleOutlinesList";
 import ModuleOutlinePage from "./components/ModuleOutlinePage";
 
@@ -20,6 +21,8 @@ function App() {
         <Route path="/modules" element={<ModulesPage />} />
         <Route path="/instructors/:yearId/:semesterId" element={<InstructorsPage />} />
         <Route path="/instructors" element={<InstructorsPage />} />
+        <Route path="/available-instructors" element={<AvailableInstructorsPage />} />
+        <Route path="/timetable/:yearId/:semesterId/available-instructors" element={<AvailableInstructorsPage />} />
         {/* Module Outlines routes */}
         <Route path="/module-outlines/:yearId/:semesterId" element={<ModuleOutlinesList />} />
         <Route path="/module-outlines" element={<ModuleOutlinesList />} />

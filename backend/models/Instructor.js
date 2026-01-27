@@ -4,5 +4,10 @@ export default (sequelize, DataTypes) => {
     email: DataTypes.STRING,
     department: DataTypes.STRING,
     address: DataTypes.STRING,
+    role: {
+      type: DataTypes.ENUM("MODULE_LEADER", "SUPPORTIVE_INSTRUCTOR", "REGULAR"),
+      defaultValue: "REGULAR",
+      allowNull: false
+    }
   });
 };
