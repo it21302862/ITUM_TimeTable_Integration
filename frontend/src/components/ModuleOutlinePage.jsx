@@ -33,11 +33,13 @@ const ModuleOutlinePage = () => {
 
   const [newOutcome, setNewOutcome] = useState("");
   const [newWeekTopic, setNewWeekTopic] = useState("");
+  const [newWeekReadings, setNewWeekReadings] = useState("");
   const [newAssessment, setNewAssessment] = useState({
-    component: "",
+    type: "",
     weight: "",
-    dueDate: "",
+    description: "",
   });
+  const [editingAssessmentIndex, setEditingAssessmentIndex] = useState(null);
 
   useEffect(() => {
     loadOutline();
@@ -123,10 +125,11 @@ const ModuleOutlinePage = () => {
         ...prev,
         weeklyTopics: [
           ...prev.weeklyTopics,
-          { title: newWeekTopic, readings: "" },
+          { title: newWeekTopic, readings: newWeekReadings },
         ],
       }));
       setNewWeekTopic("");
+      setNewWeekReadings("");
     }
   };
 
@@ -138,12 +141,22 @@ const ModuleOutlinePage = () => {
   };
 
   const addAssessment = () => {
-    if (newAssessment.component.trim() && newAssessment.weight.trim()) {
-      setFormData((prev) => ({
-        ...prev,
-        assessments: [...prev.assessments, newAssessment],
-      }));
-      setNewAssessment({ component: "", weight: "", dueDate: "" });
+    if (newAssessment.type.trim() && String(newAssessment.weight).trim()) {
+      if (editingAssessmentIndex !== null) {
+        const updated = [...formData.assessments];
+        updated[editingAssessmentIndex] = newAssessment;
+        setFormData((prev) => ({
+          ...prev,
+          assessments: updated,
+        }));
+        setEditingAssessmentIndex(null);
+      } else {
+        setFormData((prev) => ({
+          ...prev,
+          assessments: [...prev.assessments, newAssessment],
+        }));
+      }
+      setNewAssessment({ type: "", weight: "", description: "" });
     }
   };
 
@@ -451,7 +464,7 @@ const ModuleOutlinePage = () => {
                   </div>
                 )}
 
-                <div className="space-y-3">
+                <div className="space-y-3 max-h-64 overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-slate-300 dark:scrollbar-thumb-slate-700">
                   {formData.outcomes.map((outcome, index) => (
                     <div
                       key={index}
@@ -460,6 +473,7 @@ const ModuleOutlinePage = () => {
                       <span className="bg-slate-100 dark:bg-slate-900 text-slate-500 font-bold text-xs size-6 flex items-center justify-center rounded shrink-0">
                         {index + 1}
                       </span>
+
                       {isEditing ? (
                         <input
                           type="text"
@@ -479,6 +493,7 @@ const ModuleOutlinePage = () => {
                           {outcome}
                         </p>
                       )}
+
                       {isEditing && (
                         <button
                           onClick={() => removeOutcome(index)}
@@ -526,78 +541,230 @@ const ModuleOutlinePage = () => {
                 </div>
 
                 {isEditing && (
-                  <div className="p-4 bg-slate-50 dark:bg-slate-900/30 border-b border-slate-100 dark:border-slate-700">
-                    <input
-                      type="text"
-                      value={newWeekTopic}
-                      onChange={(e) => setNewWeekTopic(e.target.value)}
-                      onKeyPress={(e) => e.key === "Enter" && addWeekTopic()}
-                      placeholder="Enter topic title..."
-                      className="w-full px-4 py-2 border border-slate-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 focus:ring-blue-500"
+                  <div className="p-4 bg-slate-50 dark:bg-slate-900/30 border-b border-slate-100 dark:border-slate-700 space-y-3">
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        value={newWeekTopic}
+                        onChange={(e) => setNewWeekTopic(e.target.value)}
+                        placeholder="Enter topic title..."
+                        className="flex-1 px-4 py-2 border border-slate-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 focus:ring-blue-500"
+                      />
+                    </div>
+                    <textarea
+                      value={newWeekReadings}
+                      onChange={(e) => setNewWeekReadings(e.target.value)}
+                      placeholder="Enter readings / tasks..."
+                      className="w-full px-4 py-2 border border-slate-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 focus:ring-blue-500 min-h-[80px]"
                     />
+                    <button
+                      onClick={addWeekTopic}
+                      className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center justify-center gap-1 font-medium"
+                    >
+                      <span className="material-symbols-outlined">add</span>
+                      Add Week
+                    </button>
                   </div>
                 )}
 
-                <table className="w-full text-left border-collapse">
-                  <thead>
-                    <tr className="bg-slate-50 dark:bg-slate-900/50">
-                      <th className="py-3 px-8 text-[10px] font-bold text-slate-500 uppercase tracking-widest border-b border-slate-100 dark:border-slate-800">
-                        Week
-                      </th>
-                      <th className="py-3 px-4 text-[10px] font-bold text-slate-500 uppercase tracking-widest border-b border-slate-100 dark:border-slate-800">
-                        Topic Title
-                      </th>
-                      <th className="py-3 px-4 text-[10px] font-bold text-slate-500 uppercase tracking-widest border-b border-slate-100 dark:border-slate-800">
-                        Readings / Tasks
-                      </th>
-                      <th className="py-3 px-8 text-right border-b border-slate-100 dark:border-slate-800"></th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                    {formData.weeklyTopics.map((topic, index) => (
-                      <tr key={index}>
-                        <td className="py-4 px-8 text-sm font-bold text-slate-900 dark:text-white">
-                          Week {String(index + 1).padStart(2, "0")}
-                        </td>
-                        <td className="py-4 px-4 text-sm text-slate-700 dark:text-slate-300">
-                          {topic.topic}
-                        </td>
-                        <td className="py-4 px-4 text-xs text-slate-500">
-                          {topic.details}
-                        </td>
-                        <td className="py-4 px-8 text-right">
-                          {isEditing && (
-                            <button
-                              onClick={() => removeWeekTopic(index)}
-                              className="text-slate-400 hover:text-red-500"
-                            >
-                              <span className="material-symbols-outlined">
-                                delete
-                              </span>
-                            </button>
-                          )}
-                        </td>
+                <div className="max-h-96 overflow-y-auto scrollbar-thin scrollbar-thumb-slate-300 dark:scrollbar-thumb-slate-700">
+                  <table className="w-full text-left border-collapse">
+                    <thead className="sticky top-0 bg-slate-50 dark:bg-slate-900/50 z-10">
+                      <tr>
+                        <th className="py-3 px-8 text-[10px] font-bold text-slate-500 uppercase tracking-widest border-b">
+                          Week
+                        </th>
+                        <th className="py-3 px-4 text-[10px] font-bold text-slate-500 uppercase tracking-widest border-b">
+                          Topic Title
+                        </th>
+                        <th className="py-3 px-4 text-[10px] font-bold text-slate-500 uppercase tracking-widest border-b">
+                          Readings / Tasks
+                        </th>
+                        <th className="py-3 px-8 border-b"></th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
+                    </thead>
+
+                    <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                      {formData.weeklyTopics.map((topic, index) => {
+                        // Handle both old (topic/details) and new (title/readings) formats
+                        const displayTitle = topic.title || topic.topic || "";
+                        const displayReadings = topic.readings || topic.details || "";
+                        
+                        return (
+                        <tr key={index}>
+                          <td className="py-4 px-8 text-sm font-bold text-slate-900 dark:text-white">
+                            Week {String(index + 1).padStart(2, "0")}
+                          </td>
+                          <td className="py-4 px-4 text-sm text-slate-700 dark:text-slate-300">
+                            {isEditing ? (
+                              <input
+                                type="text"
+                                value={displayTitle}
+                                onChange={(e) => {
+                                  const updated = [...formData.weeklyTopics];
+                                  updated[index].title = e.target.value;
+                                  updated[index].topic = e.target.value;
+                                  setFormData((prev) => ({
+                                    ...prev,
+                                    weeklyTopics: updated,
+                                  }));
+                                }}
+                                className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded px-2 py-1 text-slate-700 dark:text-slate-300"
+                              />
+                            ) : (
+                              displayTitle
+                            )}
+                          </td>
+                          <td className="py-4 px-4 text-xs text-slate-500">
+                            {isEditing ? (
+                              <textarea
+                                value={displayReadings}
+                                onChange={(e) => {
+                                  const updated = [...formData.weeklyTopics];
+                                  updated[index].readings = e.target.value;
+                                  updated[index].details = e.target.value;
+                                  setFormData((prev) => ({
+                                    ...prev,
+                                    weeklyTopics: updated,
+                                  }));
+                                }}
+                                className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded px-2 py-1 text-slate-600 dark:text-slate-400 min-h-[50px]"
+                              />
+                            ) : (
+                              <div className="whitespace-pre-wrap">{displayReadings}</div>
+                            )}
+                          </td>
+                          <td className="py-4 px-8 text-right">
+                            {isEditing && (
+                              <button
+                                onClick={() => removeWeekTopic(index)}
+                                className="text-slate-400 hover:text-red-500"
+                              >
+                                <span className="material-symbols-outlined">
+                                  delete
+                                </span>
+                              </button>
+                            )}
+                          </td>
+                        </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
               </section>
 
               {/* Assessment Criteria */}
               <section
                 ref={assessmentsRef}
-                className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-8"
+                className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden"
               >
-                <div className="flex items-center gap-2 mb-6">
-                  <span className="material-symbols-outlined text-lg">
-                    assessment
-                  </span>
-                  <h3 className="text-xl font-bold text-slate-900 dark:text-white">
-                    Assessment Criteria
-                  </h3>
+                <div className="p-8 border-b border-slate-100 dark:border-slate-700">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span className="material-symbols-outlined text-lg">
+                        assessment
+                      </span>
+                      <h3 className="text-xl font-bold text-slate-900 dark:text-white">
+                        Assessment Criteria
+                      </h3>
+                    </div>
+                    {isEditing && (
+                      <button
+                        onClick={() => setEditingAssessmentIndex(-1)}
+                        className="text-blue-600 text-xs font-bold hover:underline flex items-center gap-1"
+                      >
+                        <span className="material-symbols-outlined text-sm">
+                          add
+                        </span>
+                        Add Assessment
+                      </button>
+                    )}
+                  </div>
                 </div>
 
-                <div className="overflow-hidden rounded-xl border border-slate-200 dark:border-slate-800">
+                {isEditing && editingAssessmentIndex !== null && (
+                  <div className="p-6 bg-slate-50 dark:bg-slate-900/30 border-b border-slate-100 dark:border-slate-700 space-y-4">
+                    <div className="grid grid-cols-3 gap-4">
+                      <div>
+                        <label className="block text-xs font-bold text-slate-600 dark:text-slate-400 mb-2">
+                          Type
+                        </label>
+                        <input
+                          type="text"
+                          value={newAssessment.type}
+                          onChange={(e) =>
+                            setNewAssessment({
+                              ...newAssessment,
+                              type: e.target.value,
+                            })
+                          }
+                          placeholder="e.g., Quiz, Assignment"
+                          className="w-full px-4 py-2 border border-slate-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 focus:ring-blue-500"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-bold text-slate-600 dark:text-slate-400 mb-2">
+                          Weight (%)
+                        </label>
+                        <input
+                          type="number"
+                          min="0"
+                          max="100"
+                          value={newAssessment.weight}
+                          onChange={(e) =>
+                            setNewAssessment({
+                              ...newAssessment,
+                              weight: e.target.value,
+                            })
+                          }
+                          placeholder="0-100"
+                          className="w-full px-4 py-2 border border-slate-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 focus:ring-blue-500"
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold text-slate-600 dark:text-slate-400 mb-2">
+                        Description
+                      </label>
+                      <textarea
+                        value={newAssessment.description}
+                        onChange={(e) =>
+                          setNewAssessment({
+                            ...newAssessment,
+                            description: e.target.value,
+                          })
+                        }
+                        placeholder="Describe the assessment criteria..."
+                        className="w-full px-4 py-2 border border-slate-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 focus:ring-blue-500 min-h-[80px]"
+                      />
+                    </div>
+                    <div className="flex gap-2 pt-2">
+                      <button
+                        onClick={addAssessment}
+                        className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center justify-center gap-1 font-medium"
+                      >
+                        <span className="material-symbols-outlined">save</span>
+                        {editingAssessmentIndex === -1 ? "Add" : "Save"} Assessment
+                      </button>
+                      <button
+                        onClick={() => {
+                          setEditingAssessmentIndex(null);
+                          setNewAssessment({
+                            type: "",
+                            weight: "",
+                            description: "",
+                          });
+                        }}
+                        className="px-4 py-2 bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-lg hover:bg-slate-300 dark:hover:bg-slate-600"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                <div className="overflow-x-auto">
                   <table className="w-full text-left">
                     <thead className="bg-slate-50 dark:bg-slate-900">
                       <tr>
@@ -634,7 +801,18 @@ const ModuleOutlinePage = () => {
                           </td>
 
                           {isEditing && (
-                            <td className="py-4 px-6 text-right">
+                            <td className="py-4 px-6 text-right space-x-2">
+                              <button
+                                onClick={() => {
+                                  setNewAssessment(assessment);
+                                  setEditingAssessmentIndex(index);
+                                }}
+                                className="text-slate-400 hover:text-blue-500 inline"
+                              >
+                                <span className="material-symbols-outlined">
+                                  edit
+                                </span>
+                              </button>
                               <button
                                 onClick={() => removeAssessment(index)}
                                 className="text-slate-400 hover:text-red-500"
