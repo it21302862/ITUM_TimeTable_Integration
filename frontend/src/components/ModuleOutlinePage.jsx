@@ -3,11 +3,13 @@ import { useParams, useLocation, useNavigate } from "react-router-dom";
 import { api } from "../services/api";
 
 const ModuleOutlinePage = () => {
-  const { courseId } = useParams();
+  const { yearId, semesterId, courseId } = useParams();
   const location = useLocation();
   const navigate = useNavigate();
 
   const courseData = location.state?.course || {};
+  const yearLabel = location.state?.yearLabel || "";
+  const semesterName = location.state?.semesterName || "";
 
   const [outline, setOutline] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
@@ -244,7 +246,7 @@ const ModuleOutlinePage = () => {
         <nav className="flex-1 overflow-y-auto p-4">
           <div className="space-y-1">
             <button
-              onClick={() => navigate("/modules")}
+              onClick={() => navigate(`/modules/${yearId}/${semesterId}`, { state: { yearLabel, semesterName } })}
               className="w-full text-left px-4 py-3 text-sm font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-900 rounded-lg transition-colors flex items-center gap-3"
             >
               <span className="material-symbols-outlined">school</span>
@@ -255,7 +257,7 @@ const ModuleOutlinePage = () => {
               Module Outline
             </button>
             <button
-              onClick={() => navigate("/instructors")}
+              onClick={() => navigate(`/instructors/${yearId}/${semesterId}`, { state: { yearLabel, semesterName } })}
               className="w-full text-left px-4 py-3 text-sm font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-900 rounded-lg transition-colors flex items-center gap-3"
             >
               <span className="material-symbols-outlined">group</span>

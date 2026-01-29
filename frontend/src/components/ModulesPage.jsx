@@ -25,6 +25,8 @@ const ModulesPage = () => {
   const [courses, setCourses] = useState([]);
   const [instructors, setInstructors] = useState([]);
   const [lectureHalls, setLectureHalls] = useState([]);
+  const [academicYears, setAcademicYears] = useState([]);
+  const [semesters, setSemesters] = useState([]);
   const [selected, setSelected] = useState(null);
   const [form, setForm] = useState(emptyCourse);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -50,14 +52,18 @@ const ModulesPage = () => {
         filterOptions.yearId = Number(yearId);
       }
       
-      const [coursesData, instructorsData, lectureHallsData] = await Promise.all([
+      const [coursesData, instructorsData, lectureHallsData, yearsData, semestersData] = await Promise.all([
         api.getCourses(filterOptions), 
         api.getInstructors(),
         api.getLectureHalls(),
+        api.getAcademicYears(),
+        yearId ? api.getSemestersByYear(Number(yearId)) : Promise.resolve([]),
       ]);
       setCourses(coursesData || []);
       setInstructors(instructorsData || []);
       setLectureHalls(lectureHallsData || []);
+      setAcademicYears(yearsData || []);
+      setSemesters(semestersData || []);
     } catch (err) {
       setError(err.message || "Failed to load data");
     } finally {
@@ -176,7 +182,11 @@ const ModulesPage = () => {
 
   const openCreateModal = () => {
     setSelected(null);
-    setForm(emptyCourse);
+    setForm({
+      ...emptyCourse,
+      AcademicYearId: yearId || "",
+      SemesterId: semesterId || "",
+    });
     setIsModalOpen(true);
   };
 
@@ -195,6 +205,10 @@ const ModulesPage = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    // Determine yearId and semesterId from URL params or form
+    const finalYearId = yearId || form.AcademicYearId;
+    const finalSemesterId = semesterId || form.SemesterId;
+    
     const payload = {
       code: form.code,
       name: form.name,
@@ -202,9 +216,9 @@ const ModulesPage = () => {
       assignedInstructorId: form.assignedInstructorId ? Number(form.assignedInstructorId) : null,
       moduleLeaderId: form.moduleLeaderId ? Number(form.moduleLeaderId) : null,
       moduleCoordinatorId: form.moduleCoordinatorId ? Number(form.moduleCoordinatorId) : null,
-      // Include semester and year if available from URL params
-      SemesterId: semesterId ? Number(semesterId) : null,
-      AcademicYearId: yearId ? Number(yearId) : null,
+      // Include semester and year
+      SemesterId: finalSemesterId ? Number(finalSemesterId) : null,
+      AcademicYearId: finalYearId ? Number(finalYearId) : null,
     };
 
     try {
@@ -341,7 +355,13 @@ const ModulesPage = () => {
                   <span className="text-sm font-medium">Module Outline</span>
                 </button>
                 <button
-                  onClick={() => navigate("/instructors")}
+                  onClick={() => {
+                    if (yearId && semesterId) {
+                      navigate(`/instructors/${yearId}/${semesterId}`, { state: { yearLabel, semesterName } });
+                    } else {
+                      navigate("/");
+                    }
+                  }}
                   className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-600 dark:text-gray-400"
                 >
                   <span className="material-symbols-outlined text-xl">groups</span>
@@ -662,6 +682,56 @@ const ModulesPage = () => {
             </div>
 
             <form onSubmit={handleSubmit} className="p-6 space-y-5">
+              {/* Year and Semester Selection - only show if not in URL params */}
+              {!yearId && (
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Academic Year</label>
+                    <div className="relative">
+                      <select
+                        name="AcademicYearId"
+                        value={form.AcademicYearId || ""}
+                        onChange={handleChange}
+                        className="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-800 border-none rounded-xl focus:ring-2 focus:ring-primary/20 text-sm appearance-none"
+                        required
+                      >
+                        <option value="">Select Year...</option>
+                        {academicYears.map((year) => (
+                          <option key={year.id} value={year.id}>
+                            {year.year}
+                          </option>
+                        ))}
+                      </select>
+                      <span className="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">
+                        expand_more
+                      </span>
+                    </div>
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Semester</label>
+                    <div className="relative">
+                      <select
+                        name="SemesterId"
+                        value={form.SemesterId || ""}
+                        onChange={handleChange}
+                        className="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-800 border-none rounded-xl focus:ring-2 focus:ring-primary/20 text-sm appearance-none"
+                        required
+                      >
+                        <option value="">Select Semester...</option>
+                        {semesters.map((sem) => (
+                          <option key={sem.id} value={sem.id}>
+                            {sem.name}
+                          </option>
+                        ))}
+                      </select>
+                      <span className="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">
+                        expand_more
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1.5">
                   <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Module Code</label>

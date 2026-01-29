@@ -59,7 +59,7 @@ export default function LoginPage() {
         <div
           className="absolute inset-0"
           style={{
-            backgroundColor: "rgba(19, 91, 236, 0.75)",
+            backgroundColor: "rgba(215, 239, 244, 0.8)",
             mixBlendMode: "multiply",
           }}
         ></div>

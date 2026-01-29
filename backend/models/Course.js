@@ -29,17 +29,15 @@ export default (sequelize, DataTypes) => {
       type: DataTypes.INTEGER,
       allowNull: true
     },
-
-    // Link to Semester (optional - courses can be semester-specific)
+    
     SemesterId: {
       type: DataTypes.INTEGER,
-      allowNull: true
+      allowNull: false
     },
 
-    // Link to Academic Year (optional - courses can be year-specific)
     AcademicYearId: {
       type: DataTypes.INTEGER,
-      allowNull: true
+      allowNull: false
     }
   });
 };

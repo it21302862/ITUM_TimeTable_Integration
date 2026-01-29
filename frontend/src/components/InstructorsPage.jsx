@@ -63,10 +63,10 @@ const InstructorsPage = () => {
         console.log("⏳ Starting parallel module loading for all instructors...");
         // Load all modules in parallel
         await Promise.all(data.map((ins) => loadModules(ins.id)));
-        console.log("✅ All instructor modules loaded");
+        console.log("All instructor modules loaded");
       }
     } catch (err) {
-      console.error("❌ Error loading instructors:", err);
+      console.error("Error loading instructors:", err);
       setError(err.message);
     } finally {
       setLoading(false);
@@ -96,22 +96,18 @@ const InstructorsPage = () => {
     try {
       setLoadingModulesMap((prev) => ({ ...prev, [instructorId]: true }));
 
-      // For InstructorsPage, we don't filter by semester or year
-      // We want to show ALL modules the instructor is assigned to
       const options = {};
-      
-      console.log(`Loading all modules for instructor ${instructorId}`);
       
       const modules = await api.getModulesByInstructor(instructorId, options);
 
-      console.log(`✅ Modules loaded for instructor ${instructorId}:`, modules, `Count: ${modules?.length || 0}`);
+      console.log(`Modules loaded for instructor ${instructorId}:`, modules, `Count: ${modules?.length || 0}`);
 
       setInstructorModulesMap((prev) => ({
         ...prev,
         [instructorId]: modules || [],
       }));
     } catch (err) {
-      console.error(`❌ Failed to fetch modules for instructor ${instructorId}:`, err);
+      console.error(`Failed to fetch modules for instructor ${instructorId}:`, err);
       setInstructorModulesMap((prev) => ({ ...prev, [instructorId]: [] }));
     } finally {
       setLoadingModulesMap((prev) => ({ ...prev, [instructorId]: false }));
@@ -441,7 +437,13 @@ const InstructorsPage = () => {
                   <span className="text-sm font-medium">Available Instructors</span>
                 </button>
                 <button
-                  onClick={() => navigate("/modules")}
+                  onClick={() => {
+                    if (yearId && semesterId) {
+                      navigate(`/modules/${yearId}/${semesterId}`, { state: { yearLabel, semesterName } });
+                    } else {
+                      navigate("/");
+                    }
+                  }}
                   className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-600 dark:text-gray-400"
                 >
                   <span className="material-symbols-outlined text-xl">book</span>

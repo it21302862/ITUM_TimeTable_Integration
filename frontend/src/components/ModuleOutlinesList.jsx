@@ -88,7 +88,7 @@ const ModuleOutlinesList = () => {
             {filteredCourses.map((course) => (
               <div
                 key={course.id}
-                onClick={() => navigate(`/module-outline/${course.id}`, { state: { course } })}
+                onClick={() => navigate(`/module-outline/${yearId}/${semesterId}/${course.id}`, { state: { course, yearId, semesterId, yearLabel, semesterName } })}
                 className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-6 hover:shadow-lg hover:border-blue-300 dark:hover:border-blue-600 transition-all cursor-pointer group"
               >
                 <div className="space-y-4">

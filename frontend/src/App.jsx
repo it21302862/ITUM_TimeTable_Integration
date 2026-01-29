@@ -28,7 +28,7 @@ function App() {
         {/* Module Outlines routes */}
         <Route path="/module-outlines/:yearId/:semesterId" element={<ModuleOutlinesList />} />
         <Route path="/module-outlines" element={<ModuleOutlinesList />} />
-        <Route path="/module-outline/:courseId" element={<ModuleOutlinePage />} />
+        <Route path="/module-outline/:yearId/:semesterId/:courseId" element={<ModuleOutlinePage />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>
