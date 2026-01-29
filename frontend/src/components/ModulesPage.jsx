@@ -42,8 +42,16 @@ const ModulesPage = () => {
   const loadData = async () => {
     try {
       setLoading(true);
+      // Build filter options based on URL parameters
+      const filterOptions = {};
+      if (semesterId && !isNaN(Number(semesterId))) {
+        filterOptions.semesterId = Number(semesterId);
+      } else if (yearId && !isNaN(Number(yearId))) {
+        filterOptions.yearId = Number(yearId);
+      }
+      
       const [coursesData, instructorsData, lectureHallsData] = await Promise.all([
-        api.getCourses({ semesterId: Number(semesterId) }), 
+        api.getCourses(filterOptions), 
         api.getInstructors(),
         api.getLectureHalls(),
       ]);
@@ -59,7 +67,7 @@ const ModulesPage = () => {
 
   useEffect(() => {
     loadData();
-  }, [semesterId]);
+  }, [semesterId, yearId]);
 
   // Filter courses based on search
   const filteredCourses = courses.filter((course) => {

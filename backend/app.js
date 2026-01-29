@@ -1,5 +1,6 @@
 import express, { json } from "express";
 import cors from "cors";
+import authRoutes from "./routes/auth.routes.js";
 import academicYearRoutes from "./routes/academicYear.routes.js";
 import semesterRoutes from "./routes/semester.routes.js";
 import timetableRoutes from "./routes/timetable.routes.js";
@@ -13,6 +14,7 @@ const app = express();
 app.use(cors());
 app.use(json());
 
+app.use("/api/auth", authRoutes);
 app.use("/api/academic-years", academicYearRoutes);
 app.use("/api/semesters", semesterRoutes);
 app.use("/api/timetable", timetableRoutes);

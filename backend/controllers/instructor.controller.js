@@ -1,24 +1,48 @@
 import { Instructor, TimetableSlot, Course, Semester } from "../models/index.js";
 import { Op } from "sequelize";
+import bcrypt from "bcrypt";
 
 export async function create(req, res) {
-  const instructor = await Instructor.create(req.body);
-  res.status(201).json(instructor);
+  try {
+    const { password, ...instructorData } = req.body;
+
+    // Hash password if provided
+    if (password) {
+      const saltRounds = 10;
+      instructorData.password = await bcrypt.hash(password, saltRounds);
+    } else {
+      return res.status(400).json({ error: "Password is required" });
+    }
+
+    const instructor = await Instructor.create(instructorData);
+    res.status(201).json(instructor);
+  } catch (error) {
+    console.error("Error creating instructor:", error);
+    res.status(500).json({ error: "Failed to create instructor" });
+  }
 }
 
 export async function getAll(req, res) {
-  res.json(await Instructor.findAll());
+  const instructors = await Instructor.findAll({
+    attributes: { exclude: ['password'] }
+  });
+  res.json(instructors);
 }
 
 export async function getOne(req, res) {
-  res.json(await Instructor.findByPk(req.params.id));
+  const instructor = await Instructor.findByPk(req.params.id, {
+    attributes: { exclude: ['password'] }
+  });
+  res.json(instructor);
 }
 
 export async function getAvailableInstructors(req, res) {
   try {
     const { date, semesterId } = req.query;
     
-    const instructors = await Instructor.findAll();
+    const instructors = await Instructor.findAll({
+      attributes: { exclude: ['password'] }
+    });
     
     let checkDate;
     if (date) {
@@ -160,8 +184,21 @@ export async function getAvailableInstructors(req, res) {
 }
 
 export async function update(req, res) {
-  await Instructor.update(req.body, { where: { id: req.params.id } });
-  res.json({ message: "Instructor updated" });
+  try {
+    const updateData = { ...req.body };
+
+    // Hash password if being updated
+    if (updateData.password) {
+      const saltRounds = 10;
+      updateData.password = await bcrypt.hash(updateData.password, saltRounds);
+    }
+
+    await Instructor.update(updateData, { where: { id: req.params.id } });
+    res.json({ message: "Instructor updated" });
+  } catch (error) {
+    console.error("Error updating instructor:", error);
+    res.status(500).json({ error: "Failed to update instructor" });
+  }
 }
 
 export async function remove(req, res) {

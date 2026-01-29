@@ -114,10 +114,10 @@ const WeeklyTimetable = () => {
       startTime: "09:00",
       endTime: "10:00",
       sessionType: "LECTURE",
-      CourseId: "",
-      InstructorId: "",
+      CourseId: courses.length > 0 ? courses[0].id : "",
+      InstructorId: instructors.length > 0 ? instructors[0].id : "",
       SupportiveInstructorIds: [],
-      LectureHallId: "",
+      LectureHallId: lectureHalls.length > 0 ? lectureHalls[0].id : "",
     });
     setIsModalOpen(true);
   };
@@ -795,14 +795,15 @@ const WeeklyTimetable = () => {
                   onChange={handleFormChange}
                   className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm font-medium focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                 >
-                  <option disabled selected>
-                    Select a module...
-                  </option>
-                  {courses.map((course) => (
-                    <option key={course.id} value={course.id}>
-                      {course.code} - {course.name}
-                    </option>
-                  ))}
+                  {courses.length === 0 ? (
+                    <option disabled>No courses available</option>
+                  ) : (
+                    courses.map((course) => (
+                      <option key={course.id} value={course.id}>
+                        {course.code} - {course.name}
+                      </option>
+                    ))
+                  )}
                 </select>
               </div>
 
@@ -837,14 +838,15 @@ const WeeklyTimetable = () => {
                     onChange={handleFormChange}
                     className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm font-medium focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                   >
-                    <option disabled selected>
-                      Select location...
-                    </option>
-                    {lectureHalls.map((lecturehall) => (
-                      <option key={lecturehall.id} value={lecturehall.id}>
-                        {lecturehall.name}
-                      </option>
-                    ))}
+                    {lectureHalls.length === 0 ? (
+                      <option disabled>No lecture halls available</option>
+                    ) : (
+                      lectureHalls.map((lecturehall) => (
+                        <option key={lecturehall.id} value={lecturehall.id}>
+                          {lecturehall.name}
+                        </option>
+                      ))
+                    )}
                   </select>
                 </div>
               </div>
@@ -862,14 +864,15 @@ const WeeklyTimetable = () => {
                     onChange={handleFormChange}
                     className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm font-medium focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                   >
-                    <option disabled selected>
-                      Assign instructor...
-                    </option>
-                    {instructors.map((instructor) => (
-                      <option key={instructor.id} value={instructor.id}>
-                        {instructor.name}
-                      </option>
-                    ))}
+                    {instructors.length === 0 ? (
+                      <option disabled>No instructors available</option>
+                    ) : (
+                      instructors.map((instructor) => (
+                        <option key={instructor.id} value={instructor.id}>
+                          {instructor.name}
+                        </option>
+                      ))
+                    )}
                   </select>
                 </div>
 

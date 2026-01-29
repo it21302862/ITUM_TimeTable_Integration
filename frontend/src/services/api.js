@@ -1,6 +1,37 @@
 const API_BASE_URL = "http://localhost:5000/api";
 
 export const api = {
+  // Authentication
+  async login(email, password) {
+    const response = await fetch(`${API_BASE_URL}/auth/login`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ email, password }),
+    });
+    if (!response.ok) {
+      throw new Error("Failed to login");
+    }
+    return response.json();
+  },
+
+  async logout() {
+    const token = localStorage.getItem("token");
+    const response = await fetch(`${API_BASE_URL}/auth/logout`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    if (!response.ok) {
+      throw new Error("Failed to logout");
+    }
+    localStorage.removeItem("token");
+    return response.json();
+  },
+
   // Academic Years
   async getAcademicYears() {
     const response = await fetch(`${API_BASE_URL}/academic-years`);

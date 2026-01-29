@@ -1,4 +1,5 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import LoginPage from "./components/LoginPage";
 import SelectAcademicYear from "./components/SelectAcademicYear";
 import SelectSemester from "./components/SelectSemester";
 import WeeklyTimetable from "./components/WeeklyTimetable";
@@ -12,6 +13,7 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
+        <Route path="/login" element={<LoginPage />} />
         <Route path="/" element={<SelectAcademicYear />} />
         <Route path="/semesters/:yearId" element={<SelectSemester />} />
         {/* Include yearId in timetable route for proper context passing */}

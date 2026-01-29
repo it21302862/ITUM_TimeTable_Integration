@@ -45,11 +45,28 @@ const InstructorsPage = () => {
     try {
       setLoading(true);
       const data = await api.getInstructors();
+      console.log("📋 Fetched instructors:", data?.length, "instructors");
       setInstructors(data || []);
 
-      // Load modules for each instructor
-      (data || []).forEach((ins) => loadModules(ins.id));
+      // Initialize maps for each instructor
+      if (data && data.length > 0) {
+        // Initialize instructorModulesMap with empty arrays
+        const initialModulesMap = {};
+        const initialLoadingMap = {};
+        data.forEach((ins) => {
+          initialModulesMap[ins.id] = [];
+          initialLoadingMap[ins.id] = true;
+        });
+        setInstructorModulesMap(initialModulesMap);
+        setLoadingModulesMap(initialLoadingMap);
+        
+        console.log("⏳ Starting parallel module loading for all instructors...");
+        // Load all modules in parallel
+        await Promise.all(data.map((ins) => loadModules(ins.id)));
+        console.log("✅ All instructor modules loaded");
+      }
     } catch (err) {
+      console.error("❌ Error loading instructors:", err);
       setError(err.message);
     } finally {
       setLoading(false);
@@ -79,14 +96,22 @@ const InstructorsPage = () => {
     try {
       setLoadingModulesMap((prev) => ({ ...prev, [instructorId]: true }));
 
-      const modules = await api.getModulesByInstructor(instructorId, { semesterId: Number(semesterId) });
+      // For InstructorsPage, we don't filter by semester or year
+      // We want to show ALL modules the instructor is assigned to
+      const options = {};
+      
+      console.log(`Loading all modules for instructor ${instructorId}`);
+      
+      const modules = await api.getModulesByInstructor(instructorId, options);
+
+      console.log(`✅ Modules loaded for instructor ${instructorId}:`, modules, `Count: ${modules?.length || 0}`);
 
       setInstructorModulesMap((prev) => ({
         ...prev,
-        [instructorId]: modules,
+        [instructorId]: modules || [],
       }));
     } catch (err) {
-      console.error("Failed to fetch modules:", err);
+      console.error(`❌ Failed to fetch modules for instructor ${instructorId}:`, err);
       setInstructorModulesMap((prev) => ({ ...prev, [instructorId]: [] }));
     } finally {
       setLoadingModulesMap((prev) => ({ ...prev, [instructorId]: false }));
@@ -95,7 +120,7 @@ const InstructorsPage = () => {
 
   useEffect(() => {
     loadInstructors();
-  }, [semesterId]);
+  }, []);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -523,6 +548,15 @@ const InstructorsPage = () => {
               <div className="grid grid-cols-1 gap-6">
                 {sortedInstructors.map((ins) => {
                   const color = getColorClass(ins.name);
+                  const modules = instructorModulesMap[ins.id];
+                  const isLoading = loadingModulesMap[ins.id];
+                  
+                  // Debug output
+                  console.log(`Card render for instructor ${ins.id} (${ins.name}):`, {
+                    isLoading,
+                    modules: modules?.length || 0,
+                    modulesData: modules
+                  });
 
                   return (
                     <div
