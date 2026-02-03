@@ -123,44 +123,62 @@ export async function getByInstructor(req, res) {
     const { instructorId } = req.params;
     const { semesterId, yearId } = req.query;
 
-    const whereClause = { InstructorId: Number(instructorId) };
+    const instructorIdNum = Number(instructorId);
+    const semesterIdNum = semesterId ? Number(semesterId) : null;
+    const yearIdNum = yearId ? Number(yearId) : null;
 
-    // If semesterId is provided, filter by it
-    if (semesterId) {
-      whereClause.SemesterId = Number(semesterId);
-    } else if (yearId) {
-      // If yearId is provided but no semesterId, get all semesters for that year
-      const semesters = await Semester.findAll({
-        where: { AcademicYearId: Number(yearId) },
-        attributes: ["id"],
-      });
-      const semesterIds = semesters.map((s) => s.id);
-      if (semesterIds.length > 0) {
-        whereClause.SemesterId = { [Op.in]: semesterIds };
-      } else {
-        // No semesters found for the year, return empty array
-        return res.json({
-          slots: [],
-          weeklyWorkloadHours: 0
-        });
-      }
-    }
+    const slotWhere = {};
+    if (semesterIdNum) slotWhere.SemesterId = semesterIdNum;
 
-    const slots = await TimetableSlot.findAll({
-      where: whereClause,
+    const courseInclude = {
+      model: Course,
+      where: yearIdNum ? { AcademicYearId: yearIdNum } : undefined,
+      required: !!yearIdNum,
+    };
+
+    // 1) Slots where user is the MAIN instructor
+    const mainSlots = await TimetableSlot.findAll({
+      where: { ...slotWhere, InstructorId: instructorIdNum },
       include: [
-        { model: Course },
+        courseInclude,
         { model: Instructor },
         { model: Instructor, as: "SupportiveInstructors", through: { attributes: [] } },
         { model: LectureHall },
-        { model: Semester }
+        { model: Semester },
       ],
-      order: [["dayOfWeek", "ASC"], ["startTime", "ASC"]]
+      order: [["dayOfWeek", "ASC"], ["startTime", "ASC"]],
+    });
+
+    // 2) Slots where user is a SUPPORTIVE instructor (many-to-many)
+    const supportiveSlots = await TimetableSlot.findAll({
+      where: slotWhere,
+      include: [
+        courseInclude,
+        { model: Instructor },
+        {
+          model: Instructor,
+          as: "SupportiveInstructors",
+          where: { id: instructorIdNum },
+          through: { attributes: [] },
+          required: true,
+        },
+        { model: LectureHall },
+        { model: Semester },
+      ],
+      order: [["dayOfWeek", "ASC"], ["startTime", "ASC"]],
+    });
+
+    // Merge & dedupe by slot id
+    const byId = new Map();
+    for (const s of [...mainSlots, ...supportiveSlots]) byId.set(s.id, s);
+    const filteredSlots = Array.from(byId.values()).sort((a, b) => {
+      if (a.dayOfWeek !== b.dayOfWeek) return a.dayOfWeek.localeCompare(b.dayOfWeek);
+      return String(a.startTime).localeCompare(String(b.startTime));
     });
 
     // Calculate weekly workload (sum of hours)
     let totalMinutes = 0;
-    slots.forEach(slot => {
+    filteredSlots.forEach(slot => {
       if (slot.startTime && slot.endTime) {
         const [startH, startM] = slot.startTime.split(":").map(Number);
         const [endH, endM] = slot.endTime.split(":").map(Number);
@@ -171,7 +189,7 @@ export async function getByInstructor(req, res) {
     });
 
     res.json({
-      slots,
+      slots: filteredSlots,
       weeklyWorkloadHours: Math.round(totalMinutes / 60)
     });
   } catch (err) {

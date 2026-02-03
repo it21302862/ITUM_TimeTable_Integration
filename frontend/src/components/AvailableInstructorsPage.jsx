@@ -31,8 +31,7 @@ const AvailableInstructorsPage = () => {
     try {
       setLoading(true);
       const data = await api.getAvailableInstructors({
-        date: selectedDateTime,
-        semesterId: semesterId || undefined
+        date: selectedDateTime
       });
       setInstructors(data || []);
     } catch (err) {
@@ -341,7 +340,7 @@ const AvailableInstructorsPage = () => {
                                 </span>
                               </div>
                               {isFree && (
-                                <button className="bg-primary text-white px-6 py-2.5 rounded-xl font-bold text-sm shadow-lg shadow-primary/20 hover:bg-primary/90 transition-all flex items-center gap-2">
+                                <button className="bg-blue-500 text-white px-6 py-2.5 rounded-xl font-bold text-sm shadow-lg shadow-primary/20 hover:bg-primary/90 transition-all flex items-center gap-2">
                                   <span className="material-symbols-outlined text-lg">add_task</span>
                                   Quick Assign
                                 </button>
@@ -361,7 +360,7 @@ const AvailableInstructorsPage = () => {
                               <div className="flex items-center gap-2">
                                 <span className="material-symbols-outlined text-gray-400 text-lg">schedule</span>
                                 <span className="text-xs text-gray-600 dark:text-gray-400 font-medium">
-                                  Current: {instructor.currentSession.Course?.name}
+                                  Current: {instructor.currentSession.Course?.name} ({instructor.currentSession.Semester?.name || "Unknown Semester"})
                                 </span>
                               </div>
                             )}

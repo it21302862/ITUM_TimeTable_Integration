@@ -110,6 +110,14 @@ export const api = {
     return response.json();
   },
 
+  async getCurrentSemesters() {
+    const response = await fetch(`${API_BASE_URL}/semesters/current`);
+    if (!response.ok) {
+      throw new Error("Failed to fetch current semesters");
+    }
+    return response.json();
+  },
+
   async createSemester(data) {
     const response = await fetch(`${API_BASE_URL}/semesters`, {
       method: "POST",

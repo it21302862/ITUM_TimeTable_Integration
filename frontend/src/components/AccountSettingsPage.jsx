@@ -120,7 +120,7 @@ export default function AccountSettingsPage() {
   };
 
   const handleCancel = () => {
-    navigate(-1);
+    navigate("/");
   };
 
   if (loading) {
@@ -230,6 +230,15 @@ export default function AccountSettingsPage() {
                 Quick Actions
               </h4>
               <div className="space-y-2">
+                <button
+                  onClick={() => navigate("/academic-plans")}
+                  className="w-full flex items-center gap-2 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
+                >
+                  <span className="material-symbols-outlined text-base">
+                    calendar_view_week
+                  </span>
+                  <span>Academic Plans</span>
+                </button>
                 <button className="w-full flex items-center gap-2 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors">
                   <span className="material-symbols-outlined text-base">
                     lock

@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import LoginPage from "./components/LoginPage";
 import AccountSettingsPage from "./components/AccountSettingsPage";
+import AcademicPlansPage from "./components/AcademicPlansPage";
 import SelectAcademicYear from "./components/SelectAcademicYear";
 import SelectSemester from "./components/SelectSemester";
 import WeeklyTimetable from "./components/WeeklyTimetable";
@@ -20,6 +21,7 @@ function App() {
         
         {/* Protected Routes - Require authentication */}
         <Route path="/account-settings" element={<PrivateRoute><AccountSettingsPage /></PrivateRoute>} />
+        <Route path="/academic-plans" element={<PrivateRoute><AcademicPlansPage /></PrivateRoute>} />
         <Route path="/dashboard" element={<PrivateRoute><SelectAcademicYear /></PrivateRoute>} />
         <Route path="/semesters/:yearId" element={<PrivateRoute><SelectSemester /></PrivateRoute>} />
         <Route path="/timetable/:yearId/:semesterId" element={<PrivateRoute><WeeklyTimetable /></PrivateRoute>} />

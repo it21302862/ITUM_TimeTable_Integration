@@ -79,7 +79,9 @@ const InstructorsPage = () => {
     if (!instructorId) return;
     try {
       setLoadingSchedule(true);
-      const options = semesterId ? { semesterId } : {};
+      const options = {};
+      if (semesterId) options.semesterId = semesterId;
+      if (yearId) options.yearId = yearId;
       const result = await api.getTimetableSlotsByInstructor(instructorId, options);
       setInstructorSchedule(result.slots || []);
       setWeeklyWorkload(result.weeklyWorkloadHours || 0);
@@ -98,6 +100,8 @@ const InstructorsPage = () => {
       setLoadingModulesMap((prev) => ({ ...prev, [instructorId]: true }));
 
       const options = {};
+      if (semesterId) options.semesterId = semesterId;
+      if (yearId) options.yearId = yearId;
       
       const modules = await api.getModulesByInstructor(instructorId, options);
 
@@ -683,7 +687,7 @@ const InstructorsPage = () => {
                                 className="text-[10px] font-black text-gray-400
                                  uppercase tracking-widest block mb-2"
                               >
-                                Current Modules
+                                Leader Modules
                               </span>
 
                               <div className="flex flex-wrap gap-2">
@@ -777,7 +781,7 @@ const InstructorsPage = () => {
                 {/* Schedule */}
                 <div className="space-y-3">
                   <h3 className="text-sm font-bold text-gray-600 dark:text-gray-400 uppercase tracking-wider">
-                    Schedule
+                    Leader Module Schedule
                   </h3>
 
                   {loadingSchedule ? (
@@ -815,7 +819,7 @@ const InstructorsPage = () => {
                     </div>
                   ) : (
                     <div className="text-center text-gray-500 text-sm py-4">
-                      {semesterId ? "No sessions scheduled for this semester" : "Select a semester to view schedule"}
+                      {semesterId ? "No leader module sessions scheduled for this semester" : "Select a semester to view schedule"}
                     </div>
                   )}
                 </div>

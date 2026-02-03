@@ -171,22 +171,13 @@ export async function getModulesByInstructor(req, res) {
       ]
     };
 
-    // Apply semester filtering if provided
+    // Apply BOTH semesterId AND yearId filtering if provided
     if (semesterId) {
       courseWhere.SemesterId = Number(semesterId);
-    } else if (yearId) {
-      // If yearId is provided, get semesters for that year
-      const semesters = await Semester.findAll({
-        where: { AcademicYearId: Number(yearId) },
-        attributes: ["id"],
-      });
-      const semesterIds = semesters.map((s) => s.id);
-      if (semesterIds.length > 0) {
-        courseWhere.SemesterId = { [Op.in]: semesterIds };
-      } else {
-        // No semesters found for the year, return empty array
-        return res.json([]);
-      }
+    }
+    
+    if (yearId) {
+      courseWhere.AcademicYearId = Number(yearId);
     }
 
     const courses = await Course.findAll({
