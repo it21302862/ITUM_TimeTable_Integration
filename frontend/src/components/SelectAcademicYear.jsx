@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { api } from "../services/api";
+import UserAvatar from "./UserAvatar";
 import activeYearImage from "../assets/active-year.jpg";
 
 const SelectAcademicYear = () => {
@@ -157,13 +158,7 @@ const SelectAcademicYear = () => {
                 <span className="material-symbols-outlined">notifications</span>
               </button>
 
-              <div
-                className="h-10 w-10 overflow-hidden rounded-full border-2 border-primary/20 bg-cover bg-center"
-                style={{
-                  backgroundImage:
-                    'url("https://lh3.googleusercontent.com/aida-public/AB6AXuAc_zqWPCY66JwFhgj4TUTraFNpWiBzqhlJGkp2dcxsHXoXQzn1wqgZIVUAjeKmHvwXU18pSGoNv9VbmPJ4_IyLfsaz3bw-EQcxLSY6O1FyWaiJhwZ3nkM8IxOZJJPpnuRuWHidB6UEIS2I0UbjWsj7GL1o07qsuxFJyDTTrDfDETbVt5apdACzL8BZStgospHZve4Z-PLekfpdrKmaSr7WcCj_kFwCf54uPGMf5xxWbwqpliSqXw3uJZy4mZOD0AARZE67z8JpyFk")',
-                }}
-              />
+              <UserAvatar />
             </div>
           </div>
         </div>

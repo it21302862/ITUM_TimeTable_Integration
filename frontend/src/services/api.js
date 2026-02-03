@@ -32,6 +32,44 @@ export const api = {
     return response.json();
   },
 
+  async getUserProfile() {
+    const token = localStorage.getItem("token");
+    const response = await fetch(`${API_BASE_URL}/auth/profile`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    if (!response.ok) {
+      throw new Error("Failed to fetch user profile");
+    }
+    const data = await response.json();
+    if (data?.imageUrl && typeof data.imageUrl === "string" && data.imageUrl.startsWith("/")) {
+      data.imageUrl = API_BASE_URL.replace("/api", "") + data.imageUrl;
+    }
+    return data;
+  },
+
+  async updateUserProfile(formData) {
+    const token = localStorage.getItem("token");
+    const response = await fetch(`${API_BASE_URL}/auth/profile`, {
+      method: "PUT",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      body: formData,
+    });
+    if (!response.ok) {
+      throw new Error("Failed to update user profile");
+    }
+    const data = await response.json();
+    if (data?.imageUrl && typeof data.imageUrl === "string" && data.imageUrl.startsWith("/")) {
+      data.imageUrl = API_BASE_URL.replace("/api", "") + data.imageUrl;
+    }
+    return data;
+  },
+
   // Academic Years
   async getAcademicYears() {
     const response = await fetch(`${API_BASE_URL}/academic-years`);

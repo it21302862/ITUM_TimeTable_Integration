@@ -65,6 +65,74 @@ export const logout = async (req, res) => {
   }
 };
 
+// Get current user profile
+export const getUserProfile = async (req, res) => {
+  try {
+    const instructorId = req.user.id;
+    
+    const instructor = await Instructor.findByPk(instructorId);
+    
+    if (!instructor) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    res.json({
+      id: instructor.id,
+      name: instructor.name,
+      email: instructor.email,
+      department: instructor.department,
+      address: instructor.address,
+      role: instructor.role,
+      imageUrl: instructor.imageUrl,
+    });
+  } catch (error) {
+    console.error("Get profile error:", error);
+    res.status(500).json({ error: "Failed to fetch profile" });
+  }
+};
+
+// Update user profile
+export const updateUserProfile = async (req, res) => {
+  try {
+    const instructorId = req.user.id;
+    const { name, email, department, address } = req.body;
+    
+    const instructor = await Instructor.findByPk(instructorId);
+    
+    if (!instructor) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    // Update fields
+    if (name) instructor.name = name;
+    if (email) instructor.email = email;
+    if (department) instructor.department = department;
+    if (address) instructor.address = address;
+    
+    // Handle image upload if provided
+    if (req.file) {
+      // Store the file path or URL
+      instructor.imageUrl = `/uploads/${req.file.filename}`;
+    }
+
+    await instructor.save();
+
+    res.json({
+      id: instructor.id,
+      name: instructor.name,
+      email: instructor.email,
+      department: instructor.department,
+      address: instructor.address,
+      role: instructor.role,
+      imageUrl: instructor.imageUrl,
+      message: "Profile updated successfully"
+    });
+  } catch (error) {
+    console.error("Update profile error:", error);
+    res.status(500).json({ error: "Failed to update profile" });
+  }
+};
+
 // Middleware to verify JWT token
 export const verifyToken = (req, res, next) => {
   try {

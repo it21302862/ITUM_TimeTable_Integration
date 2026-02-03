@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
 import { api } from "../services/api";
+import UserAvatar from "./UserAvatar";
 
 const emptyInstructor = {
   name: "",
@@ -354,13 +355,7 @@ const InstructorsPage = () => {
             </button>
           </div>
 
-          <div
-            className="h-10 w-10 overflow-hidden rounded-full border-2 border-primary/20 bg-cover bg-center"
-            style={{
-              backgroundImage:
-                'url("https://lh3.googleusercontent.com/aida-public/AB6AXuAc_zqWPCY66JwFhgj4TUTraFNpWiBzqhlJGkp2dcxsHXoXQzn1wqgZIVUAjeKmHvwXU18pSGoNv9VbmPJ4_IyLfsaz3bw-EQcxLSY6O1FyWaiJhwZ3nkM8IxOZJJPpnuRuWHidB6UEIS2I0UbjWsj7GL1o07qsuxFJyDTTrDfDETbVt5apdACzL8BZStgospHZve4Z-PLekfpdrKmaSr7WcCj_kFwCf54uPGMf5xxWbwqpliSqXw3uJZy4mZOD0AARZE67z8JpyFk")',
-            }}
-          />
+          <UserAvatar />
         </div>
       </header>
 
@@ -738,55 +733,91 @@ const InstructorsPage = () => {
               </div>
 
               <div className="space-y-6">
+                {/* Instructor Info */}
                 <div className="p-4 bg-primary/5 rounded-xl border border-primary/10">
-                  <div className="flex items-center gap-3 mb-4 text-blue-600">
+                  <div className="flex items-center gap-3 mb-4">
                     <div
                       className={`size-10 rounded-full ${getColorClass(selected.name).bg} ${getColorClass(selected.name).text} flex items-center justify-center font-bold`}
                     >
                       {getInitials(selected.name)}
                     </div>
-                    <div>
-                      <h4 className="font-bold text-sm">{selected.name}</h4>
-                      <p className="text-[10px] text-gray-400 uppercase font-black">
-                        Weekly Workload: {weeklyWorkload}h
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2">
+                        <h3 className="text-xl font-black text-blue-500 dark:text-white">
+                          {selected.name}
+                        </h3>
+                        {selected.type && (
+                          <span
+                            className="px-2 py-0.5 bg-blue-100 dark:bg-blue-900/30
+                             text-blue-600 text-[10px] font-bold
+                             rounded-full uppercase"
+                          >
+                            {selected.type}
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-red-400 font-bold text-sm mt-0.5">
+                        {selected.department || "Not Assigned"}
+                      </p>
+                      <p className="text-gray-600 dark:text-gray-400 text-sm mt-1">
+                        {selected.email}
                       </p>
                     </div>
                   </div>
 
-                  <div className="space-y-3">
-                    {loadingSchedule ? (
-                      <div className="text-center text-gray-500 text-sm py-4">
-                        Loading schedule...
-                      </div>
-                    ) : instructorSchedule.length > 0 ? (
-                      instructorSchedule.map((slot) => (
+                  {/* Weekly Workload */}
+                  <div className="pt-4 border-t border-primary/10">
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-gray-600 dark:text-gray-400">Weekly Workload</span>
+                      <span className="font-bold text-blue-600">{weeklyWorkload} hours</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Schedule */}
+                <div className="space-y-3">
+                  <h3 className="text-sm font-bold text-gray-600 dark:text-gray-400 uppercase tracking-wider">
+                    Schedule
+                  </h3>
+
+                  {loadingSchedule ? (
+                    <div className="text-center text-gray-500 text-sm py-4">
+                      Loading schedule...
+                    </div>
+                  ) : instructorSchedule && instructorSchedule.length > 0 ? (
+                    <div className="space-y-2 max-h-60 overflow-y-auto">
+                      {instructorSchedule.map((slot) => (
                         <div
                           key={slot.id}
-                          className="p-3 bg-white dark:bg-gray-800 rounded-lg border border-gray-100 dark:border-gray-700 shadow-sm"
+                          className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700"
                         >
-                          <div className="flex justify-between items-start mb-1">
-                            <span className="text-[10px] font-bold text-primary">
-                              {getDayAbbr(slot.dayOfWeek)} {formatTime(slot.startTime)} - {formatTime(slot.endTime)}
-                            </span>
-                            <span className="text-[10px] px-1.5 py-0.5 rounded bg-blue-100 dark:bg-blue-900/40 text-blue-600">
-                              {getSessionTypeLabel(slot.sessionType)}
-                            </span>
+                          <div className="flex justify-between items-start">
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2 mb-1">
+                                <span className="text-[10px] px-1.5 py-0.5 rounded bg-blue-100 dark:bg-blue-900/40 text-blue-600">
+                                  {getSessionTypeLabel(slot.sessionType)}
+                                </span>
+                                <span className="text-xs text-gray-500">
+                                  {getDayAbbr(slot.day)} {formatTime(slot.startTime)} - {formatTime(slot.endTime)}
+                                </span>
+                              </div>
+                              <p className="text-xs font-bold">{slot.Course?.name || "Unknown Module"}</p>
+                              <p className="text-[10px] text-blue-500 flex items-center gap-1 mt-1">
+                                <span className="material-symbols-outlined text-[12px]">
+                                  location_on
+                                </span>
+                                {slot.LectureHall?.name || "Room TBD"}
+                              </p>
+                            </div>
                           </div>
-                          <p className="text-xs font-bold">{slot.Course?.name || "Unknown Module"}</p>
-                          <p className="text-[10px] text-blue-500 flex items-center gap-1 mt-1">
-                            <span className="material-symbols-outlined text-[12px]">
-                              location_on
-                            </span>
-                            {slot.LectureHall?.name || "Room TBD"}
-                          </p>
                         </div>
-                      ))
-                    ) : (
-                      <div className="text-center text-gray-500 text-sm py-4">
-                        {semesterId ? "No sessions scheduled for this semester" : "Select a semester to view schedule"}
-                      </div>
-                    )}
-                  </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center text-gray-500 text-sm py-4">
+                      {semesterId ? "No sessions scheduled for this semester" : "Select a semester to view schedule"}
+                    </div>
+                  )}
                 </div>
 
                 {/* Actions */}

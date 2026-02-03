@@ -9,6 +9,11 @@ export default (sequelize, DataTypes) => {
       type: DataTypes.ENUM("MODULE_LEADER", "SUPPORTIVE_INSTRUCTOR", "REGULAR"),
       defaultValue: "REGULAR",
       allowNull: false
+    },
+    imageUrl: {
+      type: DataTypes.STRING,
+      allowNull: true,
+      defaultValue: null
     }
   });
 };

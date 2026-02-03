@@ -36,7 +36,7 @@ export default function LoginPage() {
         if (rememberMe) {
           localStorage.setItem("email", email);
         }
-        navigate("/");
+        navigate("/dashboard");
       }
     } catch (err) {
       setError(err.message || "Login failed. Please try again.");

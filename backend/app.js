@@ -1,4 +1,5 @@
 import express, { json } from "express";
+import path from "path";
 import cors from "cors";
 import authRoutes from "./routes/auth.routes.js";
 import academicYearRoutes from "./routes/academicYear.routes.js";
@@ -13,6 +14,10 @@ import moduleOutlineRoutes from "./routes/moduleOutline.routes.js";
 const app = express();
 app.use(cors());
 app.use(json());
+
+// Serve uploaded files (user profile images)
+const uploadsPath = path.join(process.cwd(), "uploads");
+app.use("/uploads", express.static(uploadsPath));
 
 app.use("/api/auth", authRoutes);
 app.use("/api/academic-years", academicYearRoutes);
