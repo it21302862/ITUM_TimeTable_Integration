@@ -37,6 +37,52 @@ const AvailableInstructorsPage = () => {
     sessionType: "",
     module: "",
   });
+  const [sendingNote, setSendingNote] = useState(false);
+  const [sendError, setSendError] = useState(null);
+  const [sendSuccess, setSendSuccess] = useState(false);
+
+  const handleSessionChange = (field, value) => {
+    setSessionData((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const handleSendNote = async () => {
+    if (!selectedInstructor || !note.trim()) return;
+
+    try {
+      setSendingNote(true);
+      setSendError(null);
+
+      await api.sendAssignmentNote({
+        recipientId: selectedInstructor.id,
+        message: note.trim(),
+        sessionDetails: {
+          day: sessionData.day,
+          module: sessionData.module,
+          startTime: sessionData.startTime,
+          endTime: sessionData.endTime,
+          lectureHall: sessionData.lectureHall,
+          sessionType: sessionData.sessionType,
+        },
+      });
+
+      setSendSuccess(true);
+      setShowModal(false);
+      setNote("");
+      setSessionData({
+        day: "",
+        startTime: "",
+        endTime: "",
+        lectureHall: "",
+        sessionType: "",
+        module: "",
+      });
+      setTimeout(() => setSendSuccess(false), 3000);
+    } catch (err) {
+      setSendError(err.message);
+    } finally {
+      setSendingNote(false);
+    }
+  };
 
   const loadAvailableInstructors = async () => {
     try {
@@ -117,6 +163,11 @@ const AvailableInstructorsPage = () => {
 
   return (
     <div className="bg-background-light dark:bg-background-dark text-[#0d121b] dark:text-white min-h-screen flex flex-col">
+      {sendSuccess && (
+        <div className="mx-4 mt-4 p-4 bg-green-100 dark:bg-green-900/30 border border-green-400 rounded-xl text-green-700 dark:text-green-300 text-sm font-medium">
+          Assignment note sent successfully. The instructor will see it in their profile notifications.
+        </div>
+      )}
       {/* Top Header */}
       <header className="flex items-center justify-between whitespace-nowrap border-b border-solid border-[#cfd7e7] dark:border-gray-800 bg-white dark:bg-background-dark px-4 sm:px-6 py-3">
         <div className="flex items-center gap-4 text-primary-blue">
@@ -798,22 +849,25 @@ const AvailableInstructorsPage = () => {
 
             {/* Footer */}
             <div className="px-8 py-6 bg-gray-50 dark:bg-gray-800 flex items-center justify-end gap-3 border-t">
+              {sendError && (
+                <p className="text-red-500 text-sm mr-auto">{sendError}</p>
+              )}
               <button
-                onClick={() => setShowModal(false)}
+                onClick={() => {
+                  setShowModal(false);
+                  setSendError(null);
+                }}
                 className="px-6 py-2.5 rounded-xl font-bold text-sm text-gray-600 hover:bg-gray-100"
               >
                 Cancel
               </button>
               <button
-                onClick={() => {
-                  console.log("Send note to:", selectedInstructor.name);
-                  console.log("Message:", note);
-                  setShowModal(false);
-                }}
-                className="px-8 py-2.5 bg-blue-500 text-white rounded-xl font-bold text-sm shadow-lg hover:bg-primary/90 flex items-center gap-2"
+                onClick={handleSendNote}
+                disabled={sendingNote || !note.trim()}
+                className="px-8 py-2.5 bg-blue-500 text-white rounded-xl font-bold text-sm shadow-lg hover:bg-primary/90 flex items-center gap-2 disabled:opacity-50"
               >
                 <span className="material-symbols-outlined text-lg">send</span>
-                Confirm and Send Note
+                {sendingNote ? "Sending..." : "Confirm and Send Note"}
               </button>
             </div>
           </div>

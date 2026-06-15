@@ -426,4 +426,76 @@ export const api = {
     }
     return response.json();
   },
+
+  // Notifications
+  async sendAssignmentNote(data) {
+    const token = localStorage.getItem("token");
+    const response = await fetch(`${API_BASE_URL}/notifications/assignment-note`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(data),
+    });
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({}));
+      throw new Error(err.message || "Failed to send assignment note");
+    }
+    return response.json();
+  },
+
+  async getMyNotifications() {
+    const token = localStorage.getItem("token");
+    const response = await fetch(`${API_BASE_URL}/notifications`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    if (!response.ok) {
+      throw new Error("Failed to fetch notifications");
+    }
+    return response.json();
+  },
+
+  async getUnreadNotificationCount() {
+    const token = localStorage.getItem("token");
+    const response = await fetch(`${API_BASE_URL}/notifications/unread-count`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    if (!response.ok) {
+      throw new Error("Failed to fetch unread count");
+    }
+    return response.json();
+  },
+
+  async markNotificationAsRead(id) {
+    const token = localStorage.getItem("token");
+    const response = await fetch(`${API_BASE_URL}/notifications/${id}/read`, {
+      method: "PUT",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    if (!response.ok) {
+      throw new Error("Failed to mark notification as read");
+    }
+    return response.json();
+  },
+
+  async markAllNotificationsAsRead() {
+    const token = localStorage.getItem("token");
+    const response = await fetch(`${API_BASE_URL}/notifications/read-all`, {
+      method: "PUT",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    if (!response.ok) {
+      throw new Error("Failed to mark all notifications as read");
+    }
+    return response.json();
+  },
 };

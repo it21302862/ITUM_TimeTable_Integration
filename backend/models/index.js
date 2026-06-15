@@ -9,6 +9,7 @@ import LectureHallModel from "./LectureHall.js";
 import TimetableSlotModel from "./TimetableSlot.js";
 import SemesterEventModel from "./SemesterEvent.js";
 import ModuleOutlineModel from "./ModuleOutline.js";
+import NotificationModel from "./Notification.js";
 
 const AcademicYear = AcademicYearModel(sequelize, DataTypes);
 const Semester = SemesterModel(sequelize, DataTypes);
@@ -18,6 +19,7 @@ const LectureHall = LectureHallModel(sequelize, DataTypes);
 const TimetableSlot = TimetableSlotModel(sequelize, DataTypes);
 const SemesterEvent = SemesterEventModel(sequelize, DataTypes);
 const ModuleOutline = ModuleOutlineModel(sequelize, DataTypes);
+const Notification = NotificationModel(sequelize, DataTypes);
 
 // Relations
 AcademicYear.hasMany(Semester);
@@ -77,6 +79,12 @@ AcademicYear.hasMany(Course, { foreignKey: "AcademicYearId" });
 Course.hasOne(ModuleOutline, { foreignKey: "courseId" });
 ModuleOutline.belongsTo(Course, { foreignKey: "courseId" });
 
+// Notification relations
+Notification.belongsTo(Instructor, { as: "sender", foreignKey: "senderId" });
+Notification.belongsTo(Instructor, { as: "recipient", foreignKey: "recipientId" });
+Instructor.hasMany(Notification, { as: "receivedNotifications", foreignKey: "recipientId" });
+Instructor.hasMany(Notification, { as: "sentNotifications", foreignKey: "senderId" });
+
 export {
   sequelize,
   AcademicYear,
@@ -87,4 +95,5 @@ export {
   TimetableSlot,
   SemesterEvent,
   ModuleOutline,
+  Notification,
 };

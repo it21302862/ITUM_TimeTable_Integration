@@ -20,6 +20,12 @@ export default function AccountSettingsPage() {
     imageUrl: "",
   });
 
+  const [activeView, setActiveView] = useState("settings");
+  const [notifications, setNotifications] = useState([]);
+  const [loadingNotifications, setLoadingNotifications] = useState(false);
+  const [emailNotifications, setEmailNotifications] = useState(true);
+  const [systemNotifications, setSystemNotifications] = useState(true);
+
   // Load user profile on mount
   useEffect(() => {
     const loadUserProfile = async () => {
@@ -40,6 +46,14 @@ export default function AccountSettingsPage() {
         if (response.imageUrl) {
           setImagePreview(response.imageUrl);
         }
+
+        // Load notification count for sidebar badge
+        try {
+          const notifs = await api.getMyNotifications();
+          setNotifications(notifs || []);
+        } catch {
+          // Non-critical
+        }
       } catch (err) {
         console.error("Error loading profile:", err);
         setError("Failed to load profile information");
@@ -50,6 +64,47 @@ export default function AccountSettingsPage() {
 
     loadUserProfile();
   }, []);
+
+  const loadNotifications = async () => {
+    try {
+      setLoadingNotifications(true);
+      const data = await api.getMyNotifications();
+      setNotifications(data || []);
+    } catch (err) {
+      console.error("Error loading notifications:", err);
+      setError("Failed to load notifications");
+    } finally {
+      setLoadingNotifications(false);
+    }
+  };
+
+  useEffect(() => {
+    if (activeView === "notifications") {
+      loadNotifications();
+    }
+  }, [activeView]);
+
+  const handleMarkAsRead = async (id) => {
+    try {
+      await api.markNotificationAsRead(id);
+      setNotifications((prev) =>
+        prev.map((n) => (n.id === id ? { ...n, isRead: true } : n))
+      );
+    } catch (err) {
+      console.error("Failed to mark as read:", err);
+    }
+  };
+
+  const formatNotificationDate = (dateStr) => {
+    if (!dateStr) return "";
+    return new Date(dateStr).toLocaleString("en-GB", {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  };
 
   // Handle input changes
   const handleInputChange = (e) => {
@@ -245,11 +300,36 @@ export default function AccountSettingsPage() {
                   </span>
                   <span>Privacy Settings</span>
                 </button>
-                <button className="w-full flex items-center gap-2 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors">
+                <button
+                  onClick={() => setActiveView("notifications")}
+                  className={`w-full flex items-center gap-2 px-4 py-2 text-sm rounded-lg transition-colors ${
+                    activeView === "notifications"
+                      ? "bg-blue-50 dark:bg-blue-900/30 text-blue-600 font-medium"
+                      : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+                  }`}
+                >
                   <span className="material-symbols-outlined text-base">
                     notifications
                   </span>
                   <span>Notification Preferences</span>
+                  {notifications.filter((n) => !n.isRead).length > 0 && activeView !== "notifications" && (
+                    <span className="ml-auto bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">
+                      {notifications.filter((n) => !n.isRead).length}
+                    </span>
+                  )}
+                </button>
+                <button
+                  onClick={() => setActiveView("settings")}
+                  className={`w-full flex items-center gap-2 px-4 py-2 text-sm rounded-lg transition-colors ${
+                    activeView === "settings"
+                      ? "bg-blue-50 dark:bg-blue-900/30 text-blue-600 font-medium"
+                      : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+                  }`}
+                >
+                  <span className="material-symbols-outlined text-base">
+                    person
+                  </span>
+                  <span>Account Settings</span>
                 </button>
                 <button
                   onClick={handleLogout}
@@ -282,6 +362,133 @@ export default function AccountSettingsPage() {
               </div>
             )}
 
+            {activeView === "notifications" ? (
+              <div className="bg-white dark:bg-gray-900 rounded-xl shadow-md p-8">
+                <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+                  Notification Preferences
+                </h2>
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-6">
+                  View assignment notes and system notifications sent to your profile.
+                </p>
+
+                <div className="mb-8 p-4 bg-gray-50 dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 space-y-4">
+                  <h3 className="text-sm font-bold text-gray-900 dark:text-white uppercase tracking-wider">
+                    Delivery Preferences
+                  </h3>
+                  <label className="flex items-center justify-between cursor-pointer">
+                    <div>
+                      <p className="text-sm font-medium text-gray-900 dark:text-white">System Notifications</p>
+                      <p className="text-xs text-gray-500">Receive in-app assignment notes and alerts</p>
+                    </div>
+                    <input
+                      type="checkbox"
+                      checked={systemNotifications}
+                      onChange={(e) => setSystemNotifications(e.target.checked)}
+                      className="w-5 h-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                    />
+                  </label>
+                  <label className="flex items-center justify-between cursor-pointer">
+                    <div>
+                      <p className="text-sm font-medium text-gray-900 dark:text-white">Email Notifications</p>
+                      <p className="text-xs text-gray-500">Also send copies to your university email</p>
+                    </div>
+                    <input
+                      type="checkbox"
+                      checked={emailNotifications}
+                      onChange={(e) => setEmailNotifications(e.target.checked)}
+                      className="w-5 h-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                    />
+                  </label>
+                </div>
+
+                <div>
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                      Your Notifications
+                    </h3>
+                    {notifications.some((n) => !n.isRead) && (
+                      <button
+                        onClick={async () => {
+                          await api.markAllNotificationsAsRead();
+                          setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
+                        }}
+                        className="text-xs font-bold text-blue-600 hover:underline"
+                      >
+                        Mark all as read
+                      </button>
+                    )}
+                  </div>
+
+                  {loadingNotifications ? (
+                    <div className="text-center py-8 text-gray-500">Loading notifications...</div>
+                  ) : notifications.length === 0 ? (
+                    <div className="text-center py-12 bg-gray-50 dark:bg-gray-800 rounded-xl border border-dashed border-gray-300 dark:border-gray-600">
+                      <span className="material-symbols-outlined text-4xl text-gray-400 mb-2">notifications_off</span>
+                      <p className="text-gray-500 text-sm">No notifications yet</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {notifications.map((notification) => (
+                        <div
+                          key={notification.id}
+                          onClick={() => !notification.isRead && handleMarkAsRead(notification.id)}
+                          className={`p-4 rounded-xl border transition-all cursor-pointer ${
+                            notification.isRead
+                              ? "bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700"
+                              : "bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800"
+                          }`}
+                        >
+                          <div className="flex items-start justify-between gap-3 mb-2">
+                            <div className="flex items-center gap-2">
+                              <span className="material-symbols-outlined text-blue-500 text-lg">mail</span>
+                              <div>
+                                <p className="text-sm font-bold text-gray-900 dark:text-white">
+                                  From: {notification.senderName}
+                                </p>
+                                <p className="text-[10px] text-gray-500 uppercase font-medium">
+                                  {notification.type?.replace(/_/g, " ")}
+                                </p>
+                              </div>
+                            </div>
+                            <div className="text-right shrink-0">
+                              <p className="text-[10px] text-gray-400">
+                                {formatNotificationDate(notification.createdAt)}
+                              </p>
+                              {!notification.isRead && (
+                                <span className="inline-block mt-1 size-2 rounded-full bg-blue-500"></span>
+                              )}
+                            </div>
+                          </div>
+                          <p className="text-sm text-gray-700 dark:text-gray-300 mb-2">
+                            {notification.message}
+                          </p>
+                          {notification.sessionDetails && (
+                            <div className="mt-2 pt-2 border-t border-gray-200 dark:border-gray-700 grid grid-cols-2 gap-2 text-[11px] text-gray-500">
+                              {notification.sessionDetails.module && (
+                                <span><strong>Module:</strong> {notification.sessionDetails.module}</span>
+                              )}
+                              {notification.sessionDetails.day && (
+                                <span><strong>Day:</strong> {notification.sessionDetails.day}</span>
+                              )}
+                              {notification.sessionDetails.startTime && (
+                                <span><strong>Time:</strong> {notification.sessionDetails.startTime} - {notification.sessionDetails.endTime}</span>
+                              )}
+                              {notification.sessionDetails.lectureHall && (
+                                <span><strong>Location:</strong> {notification.sessionDetails.lectureHall}</span>
+                              )}
+                              {notification.sessionDetails.sessionType && (
+                                <span><strong>Type:</strong> {notification.sessionDetails.sessionType}</span>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            ) : (
+            <>
             {/* Account Settings Card */}
             <div className="bg-white dark:bg-gray-900 rounded-xl shadow-md p-8">
               <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
@@ -483,6 +690,8 @@ export default function AccountSettingsPage() {
                 </div>
               </div>
             </div>
+            </>
+            )}
           </div>
         </div>
       </div>
