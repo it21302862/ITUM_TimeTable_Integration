@@ -21,8 +21,11 @@ export default function AccountSettingsPage() {
   });
 
   const [activeView, setActiveView] = useState("settings");
+  const [notificationTab, setNotificationTab] = useState("received");
   const [notifications, setNotifications] = useState([]);
+  const [sentNotifications, setSentNotifications] = useState([]);
   const [loadingNotifications, setLoadingNotifications] = useState(false);
+  const [actionLoadingId, setActionLoadingId] = useState(null);
   const [emailNotifications, setEmailNotifications] = useState(true);
   const [systemNotifications, setSystemNotifications] = useState(true);
 
@@ -68,14 +71,62 @@ export default function AccountSettingsPage() {
   const loadNotifications = async () => {
     try {
       setLoadingNotifications(true);
-      const data = await api.getMyNotifications();
-      setNotifications(data || []);
+      const [received, sent] = await Promise.all([
+        api.getMyNotifications(),
+        api.getSentNotifications(),
+      ]);
+      setNotifications(received || []);
+      setSentNotifications(sent || []);
     } catch (err) {
       console.error("Error loading notifications:", err);
       setError("Failed to load notifications");
     } finally {
       setLoadingNotifications(false);
     }
+  };
+
+  const handleAcceptAssignment = async (id, e) => {
+    e?.stopPropagation();
+    try {
+      setActionLoadingId(id);
+      await api.acceptAssignmentNotification(id);
+      setSuccessMessage("Assignment accepted! The session has been added to your Academic Plans.");
+      await loadNotifications();
+      setTimeout(() => setSuccessMessage(""), 4000);
+    } catch (err) {
+      setError(err.message || "Failed to accept assignment");
+    } finally {
+      setActionLoadingId(null);
+    }
+  };
+
+  const handleRejectAssignment = async (id, e) => {
+    e?.stopPropagation();
+    if (!window.confirm("Decline this assignment request?")) return;
+    try {
+      setActionLoadingId(id);
+      await api.rejectAssignmentNotification(id);
+      setSuccessMessage("Assignment request declined.");
+      await loadNotifications();
+      setTimeout(() => setSuccessMessage(""), 3000);
+    } catch (err) {
+      setError(err.message || "Failed to decline assignment");
+    } finally {
+      setActionLoadingId(null);
+    }
+  };
+
+  const getStatusBadge = (status) => {
+    const styles = {
+      PENDING: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400",
+      ACCEPTED: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400",
+      REJECTED: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400",
+    };
+    return (
+      <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${styles[status] || styles.PENDING}`}>
+        {status}
+      </span>
+    );
   };
 
   useEffect(() => {
@@ -402,17 +453,34 @@ export default function AccountSettingsPage() {
                 </div>
 
                 <div>
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                      Your Notifications
-                    </h3>
-                    {notifications.some((n) => !n.isRead) && (
+                  <div className="flex items-center gap-2 mb-4 border-b border-gray-200 dark:border-gray-700">
+                    <button
+                      onClick={() => setNotificationTab("received")}
+                      className={`px-4 py-2 text-sm font-bold border-b-2 transition-colors ${
+                        notificationTab === "received"
+                          ? "border-blue-600 text-blue-600"
+                          : "border-transparent text-gray-500 hover:text-gray-700"
+                      }`}
+                    >
+                      Received
+                    </button>
+                    <button
+                      onClick={() => setNotificationTab("sent")}
+                      className={`px-4 py-2 text-sm font-bold border-b-2 transition-colors ${
+                        notificationTab === "sent"
+                          ? "border-blue-600 text-blue-600"
+                          : "border-transparent text-gray-500 hover:text-gray-700"
+                      }`}
+                    >
+                      Sent Requests
+                    </button>
+                    {notificationTab === "received" && notifications.some((n) => !n.isRead) && (
                       <button
                         onClick={async () => {
                           await api.markAllNotificationsAsRead();
                           setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
                         }}
-                        className="text-xs font-bold text-blue-600 hover:underline"
+                        className="ml-auto text-xs font-bold text-blue-600 hover:underline"
                       >
                         Mark all as read
                       </button>
@@ -421,43 +489,129 @@ export default function AccountSettingsPage() {
 
                   {loadingNotifications ? (
                     <div className="text-center py-8 text-gray-500">Loading notifications...</div>
-                  ) : notifications.length === 0 ? (
+                  ) : notificationTab === "received" ? (
+                    notifications.length === 0 ? (
+                      <div className="text-center py-12 bg-gray-50 dark:bg-gray-800 rounded-xl border border-dashed border-gray-300 dark:border-gray-600">
+                        <span className="material-symbols-outlined text-4xl text-gray-400 mb-2">notifications_off</span>
+                        <p className="text-gray-500 text-sm">No notifications yet</p>
+                      </div>
+                    ) : (
+                      <div className="space-y-3">
+                        {notifications.map((notification) => (
+                          <div
+                            key={notification.id}
+                            className={`p-4 rounded-xl border transition-all ${
+                              notification.isRead
+                                ? "bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700"
+                                : "bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800"
+                            }`}
+                          >
+                            <div className="flex items-start justify-between gap-3 mb-2">
+                              <div className="flex items-center gap-2">
+                                <span className={`material-symbols-outlined text-lg ${
+                                  notification.type === "ASSIGNMENT_ACCEPTED" ? "text-green-500" :
+                                  notification.type === "ASSIGNMENT_REJECTED" ? "text-red-500" : "text-blue-500"
+                                }`}>
+                                  {notification.type === "ASSIGNMENT_ACCEPTED" ? "check_circle" :
+                                   notification.type === "ASSIGNMENT_REJECTED" ? "cancel" : "mail"}
+                                </span>
+                                <div>
+                                  <p className="text-sm font-bold text-gray-900 dark:text-white">
+                                    From: {notification.senderName}
+                                  </p>
+                                  <p className="text-[10px] text-gray-500 uppercase font-medium">
+                                    {notification.type?.replace(/_/g, " ")}
+                                  </p>
+                                </div>
+                              </div>
+                              <div className="text-right shrink-0">
+                                <p className="text-[10px] text-gray-400">
+                                  {formatNotificationDate(notification.createdAt)}
+                                </p>
+                                {!notification.isRead && (
+                                  <span className="inline-block mt-1 size-2 rounded-full bg-blue-500"></span>
+                                )}
+                              </div>
+                            </div>
+                            <p className="text-sm text-gray-700 dark:text-gray-300 mb-2">
+                              {notification.message}
+                            </p>
+                            {notification.sessionDetails && (
+                              <div className="mt-2 pt-2 border-t border-gray-200 dark:border-gray-700 grid grid-cols-2 gap-2 text-[11px] text-gray-500">
+                                {notification.sessionDetails.module && (
+                                  <span><strong>Module:</strong> {notification.sessionDetails.module}</span>
+                                )}
+                                {notification.sessionDetails.day && (
+                                  <span><strong>Day:</strong> {notification.sessionDetails.day}</span>
+                                )}
+                                {notification.sessionDetails.startTime && (
+                                  <span><strong>Time:</strong> {notification.sessionDetails.startTime} - {notification.sessionDetails.endTime}</span>
+                                )}
+                                {notification.sessionDetails.lectureHall && (
+                                  <span><strong>Location:</strong> {notification.sessionDetails.lectureHall}</span>
+                                )}
+                                {notification.sessionDetails.sessionType && (
+                                  <span><strong>Type:</strong> {notification.sessionDetails.sessionType}</span>
+                                )}
+                              </div>
+                            )}
+                            {notification.type === "ASSIGNMENT_NOTE" && notification.status === "PENDING" && (
+                              <div className="mt-4 flex gap-2">
+                                <button
+                                  onClick={(e) => handleAcceptAssignment(notification.id, e)}
+                                  disabled={actionLoadingId === notification.id}
+                                  className="flex items-center gap-1.5 px-4 py-2 bg-green-600 text-white rounded-lg text-xs font-bold hover:bg-green-700 disabled:opacity-50"
+                                >
+                                  <span className="material-symbols-outlined text-sm">check_circle</span>
+                                  {actionLoadingId === notification.id ? "Accepting..." : "Accept"}
+                                </button>
+                                <button
+                                  onClick={(e) => handleRejectAssignment(notification.id, e)}
+                                  disabled={actionLoadingId === notification.id}
+                                  className="flex items-center gap-1.5 px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg text-xs font-bold hover:bg-gray-300 disabled:opacity-50"
+                                >
+                                  <span className="material-symbols-outlined text-sm">close</span>
+                                  Decline
+                                </button>
+                              </div>
+                            )}
+                            {notification.type === "ASSIGNMENT_NOTE" && notification.status !== "PENDING" && (
+                              <div className="mt-3">{getStatusBadge(notification.status)}</div>
+                            )}
+                            {!notification.isRead && notification.type !== "ASSIGNMENT_NOTE" && (
+                              <button
+                                onClick={() => handleMarkAsRead(notification.id)}
+                                className="mt-2 text-xs text-blue-600 hover:underline"
+                              >
+                                Mark as read
+                              </button>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    )
+                  ) : sentNotifications.length === 0 ? (
                     <div className="text-center py-12 bg-gray-50 dark:bg-gray-800 rounded-xl border border-dashed border-gray-300 dark:border-gray-600">
-                      <span className="material-symbols-outlined text-4xl text-gray-400 mb-2">notifications_off</span>
-                      <p className="text-gray-500 text-sm">No notifications yet</p>
+                      <span className="material-symbols-outlined text-4xl text-gray-400 mb-2">send</span>
+                      <p className="text-gray-500 text-sm">No sent assignment requests yet</p>
                     </div>
                   ) : (
                     <div className="space-y-3">
-                      {notifications.map((notification) => (
+                      {sentNotifications.map((notification) => (
                         <div
                           key={notification.id}
-                          onClick={() => !notification.isRead && handleMarkAsRead(notification.id)}
-                          className={`p-4 rounded-xl border transition-all cursor-pointer ${
-                            notification.isRead
-                              ? "bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700"
-                              : "bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800"
-                          }`}
+                          className="p-4 rounded-xl border bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700"
                         >
                           <div className="flex items-start justify-between gap-3 mb-2">
-                            <div className="flex items-center gap-2">
-                              <span className="material-symbols-outlined text-blue-500 text-lg">mail</span>
-                              <div>
-                                <p className="text-sm font-bold text-gray-900 dark:text-white">
-                                  From: {notification.senderName}
-                                </p>
-                                <p className="text-[10px] text-gray-500 uppercase font-medium">
-                                  {notification.type?.replace(/_/g, " ")}
-                                </p>
-                              </div>
-                            </div>
-                            <div className="text-right shrink-0">
-                              <p className="text-[10px] text-gray-400">
-                                {formatNotificationDate(notification.createdAt)}
+                            <div>
+                              <p className="text-sm font-bold text-gray-900 dark:text-white">
+                                To: {notification.recipient?.name || "Instructor"}
                               </p>
-                              {!notification.isRead && (
-                                <span className="inline-block mt-1 size-2 rounded-full bg-blue-500"></span>
-                              )}
+                              <p className="text-[10px] text-gray-500">
+                                Sent {formatNotificationDate(notification.createdAt)}
+                              </p>
                             </div>
+                            {getStatusBadge(notification.status)}
                           </div>
                           <p className="text-sm text-gray-700 dark:text-gray-300 mb-2">
                             {notification.message}
@@ -473,13 +627,19 @@ export default function AccountSettingsPage() {
                               {notification.sessionDetails.startTime && (
                                 <span><strong>Time:</strong> {notification.sessionDetails.startTime} - {notification.sessionDetails.endTime}</span>
                               )}
-                              {notification.sessionDetails.lectureHall && (
-                                <span><strong>Location:</strong> {notification.sessionDetails.lectureHall}</span>
-                              )}
-                              {notification.sessionDetails.sessionType && (
-                                <span><strong>Type:</strong> {notification.sessionDetails.sessionType}</span>
-                              )}
                             </div>
+                          )}
+                          {notification.status === "ACCEPTED" && (
+                            <p className="mt-3 text-xs text-green-600 font-medium flex items-center gap-1">
+                              <span className="material-symbols-outlined text-sm">check_circle</span>
+                              Request accepted — slot added to timetable
+                            </p>
+                          )}
+                          {notification.status === "REJECTED" && (
+                            <p className="mt-3 text-xs text-red-600 font-medium flex items-center gap-1">
+                              <span className="material-symbols-outlined text-sm">cancel</span>
+                              Request declined by instructor
+                            </p>
                           )}
                         </div>
                       ))}

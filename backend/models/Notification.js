@@ -17,11 +17,28 @@ export default (sequelize, DataTypes) => {
       allowNull: false,
     },
     type: {
-      type: DataTypes.ENUM("ASSIGNMENT_NOTE", "SYSTEM"),
+      type: DataTypes.ENUM(
+        "ASSIGNMENT_NOTE",
+        "ASSIGNMENT_ACCEPTED",
+        "ASSIGNMENT_REJECTED",
+        "SYSTEM"
+      ),
       defaultValue: "ASSIGNMENT_NOTE",
+    },
+    status: {
+      type: DataTypes.ENUM("PENDING", "ACCEPTED", "REJECTED"),
+      defaultValue: "PENDING",
     },
     sessionDetails: {
       type: DataTypes.JSON,
+      allowNull: true,
+    },
+    timetableSlotId: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+    },
+    relatedNotificationId: {
+      type: DataTypes.INTEGER,
       allowNull: true,
     },
     isRead: {

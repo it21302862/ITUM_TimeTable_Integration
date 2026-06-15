@@ -107,10 +107,19 @@ const AcademicPlansPage = () => {
   };
 
   const getSlotForTimeAndDay = (slots, time, day) => {
-    return slots.find(slot => {
-      const slotTime = slot.startTime?.substring(0, 5); // Get HH:MM
+    const toMins = (t) => {
+      if (!t) return 0;
+      const [h, m] = t.substring(0, 5).split(":").map(Number);
+      return h * 60 + m;
+    };
+
+    return slots.find((slot) => {
       const dayAbbr = getDayAbbr(slot.dayOfWeek);
-      return slotTime === time && dayAbbr === day;
+      if (dayAbbr !== day) return false;
+      const timeMins = toMins(time);
+      const startMins = toMins(slot.startTime);
+      const endMins = toMins(slot.endTime);
+      return timeMins >= startMins && timeMins < endMins;
     });
   };
 
@@ -135,8 +144,14 @@ const AcademicPlansPage = () => {
     if (isSupportive && !isMainInstructor) {
       return "bg-red-100 border-l-4 border-red-400 text-secondary";
     }
+    if(isMainInstructor) {
+      return "bg-blue-100 border-l-4 border-blue-400 text-primary";
+    }
+    if(!isSupportive && !isMainInstructor) {
+      return "bg-gray-100 border-l-4 border-gray-300 text-gray-600";
+    }
 
-    return "bg-blue-100 border-l-4 border-blue-500 text-primary";
+    return "bg-primary/10 border-l-4 border-primary text-primary";
   };
 
   const formatAcademicYear = (semester) => {

@@ -48,6 +48,16 @@ const AvailableInstructorsPage = () => {
   const handleSendNote = async () => {
     if (!selectedInstructor || !note.trim()) return;
 
+    if (!sessionData.day || !sessionData.startTime || !sessionData.endTime || !sessionData.sessionType) {
+      setSendError("Please fill in day, start time, end time, and session type before sending.");
+      return;
+    }
+
+    if (!semesterId) {
+      setSendError("Semester context is required. Open Available Instructors from a semester timetable.");
+      return;
+    }
+
     try {
       setSendingNote(true);
       setSendError(null);
@@ -62,6 +72,8 @@ const AvailableInstructorsPage = () => {
           endTime: sessionData.endTime,
           lectureHall: sessionData.lectureHall,
           sessionType: sessionData.sessionType,
+          semesterId: semesterId ? Number(semesterId) : null,
+          yearId: yearId ? Number(yearId) : null,
         },
       });
 
@@ -89,6 +101,7 @@ const AvailableInstructorsPage = () => {
       setLoading(true);
       const data = await api.getAvailableInstructors({
         date: selectedDateTime,
+        semesterId: semesterId ? Number(semesterId) : undefined,
       });
       setInstructors(data || []);
     } catch (err) {

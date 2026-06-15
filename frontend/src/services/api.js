@@ -458,6 +458,49 @@ export const api = {
     return response.json();
   },
 
+  async getSentNotifications() {
+    const token = localStorage.getItem("token");
+    const response = await fetch(`${API_BASE_URL}/notifications/sent`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    if (!response.ok) {
+      throw new Error("Failed to fetch sent notifications");
+    }
+    return response.json();
+  },
+
+  async acceptAssignmentNotification(id) {
+    const token = localStorage.getItem("token");
+    const response = await fetch(`${API_BASE_URL}/notifications/${id}/accept`, {
+      method: "PUT",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({}));
+      throw new Error(err.message || "Failed to accept assignment");
+    }
+    return response.json();
+  },
+
+  async rejectAssignmentNotification(id) {
+    const token = localStorage.getItem("token");
+    const response = await fetch(`${API_BASE_URL}/notifications/${id}/reject`, {
+      method: "PUT",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({}));
+      throw new Error(err.message || "Failed to decline assignment");
+    }
+    return response.json();
+  },
+
   async getUnreadNotificationCount() {
     const token = localStorage.getItem("token");
     const response = await fetch(`${API_BASE_URL}/notifications/unread-count`, {

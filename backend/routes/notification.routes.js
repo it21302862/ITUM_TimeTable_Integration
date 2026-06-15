@@ -2,6 +2,9 @@ import { Router } from "express";
 import {
   sendAssignmentNote,
   getMyNotifications,
+  getSentNotifications,
+  acceptAssignment,
+  rejectAssignment,
   markAsRead,
   markAllAsRead,
   getUnreadCount,
@@ -14,7 +17,10 @@ router.use(verifyToken);
 
 router.post("/assignment-note", sendAssignmentNote);
 router.get("/", getMyNotifications);
+router.get("/sent", getSentNotifications);
 router.get("/unread-count", getUnreadCount);
+router.put("/:id/accept", acceptAssignment);
+router.put("/:id/reject", rejectAssignment);
 router.put("/read-all", markAllAsRead);
 router.put("/:id/read", markAsRead);
 
