@@ -236,28 +236,6 @@ const SelectAcademicYear = () => {
             );
           })}
         </div>
-
-        {/* Assistance Section */}
-        <div className="bg-white rounded-lg shadow-md p-6 flex items-center justify-between">
-          <div className="flex items-center gap-5">
-            <div className="flex size-14 items-center justify-center rounded-full bg-primary/10 text-primary">
-              <span class="material-symbols-outlined text-[32px]">support_agent</span>
-            </div>
-            <div>
-              <h3 className="font-bold text-text-dark mb-1">
-                Need Immediate Assistance?
-              </h3>
-              <p className="text-gray-medium">
-                Our academic support team is online to resolve timetable
-                conflicts.
-              </p>
-            </div>
-          </div>
-          <button className="bg-primary-blue text-white px-6 py-3 rounded-lg font-medium hover:bg-primary-blue-light transition-colors flex items-center space-x-2">
-            <span class="material-symbols-outlined text-[20px]">forum</span>
-            <span class="truncate">Open Emergency Chat</span>
-          </button>
-        </div>
       </main>
 
       {/* Footer */}

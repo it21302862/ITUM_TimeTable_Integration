@@ -16,6 +16,33 @@ export const api = {
     return response.json();
   },
 
+  // Password reset via phone
+  async requestPasswordReset(phone) {
+    const response = await fetch(`${API_BASE_URL}/auth/forgot-password`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ phone }),
+    });
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({}));
+      throw new Error(err.error || "Failed to request password reset");
+    }
+    return response.json();
+  },
+
+  async resetPassword(phone, code, newPassword) {
+    const response = await fetch(`${API_BASE_URL}/auth/reset-password`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ phone, code, newPassword }),
+    });
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({}));
+      throw new Error(err.error || "Failed to reset password");
+    }
+    return response.json();
+  },
+
   async logout() {
     const token = localStorage.getItem("token");
     const response = await fetch(`${API_BASE_URL}/auth/logout`, {
@@ -279,13 +306,21 @@ export const api = {
   },
 
   async createInstructor(data) {
-    const response = await fetch(`${API_BASE_URL}/instructors`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(data),
-    });
+    let response;
+    if (data instanceof FormData) {
+      response = await fetch(`${API_BASE_URL}/instructors`, {
+        method: "POST",
+        body: data,
+      });
+    } else {
+      response = await fetch(`${API_BASE_URL}/instructors`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(data),
+      });
+    }
     if (!response.ok) {
       throw new Error("Failed to create instructor");
     }

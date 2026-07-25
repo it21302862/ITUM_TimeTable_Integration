@@ -33,6 +33,16 @@ app.use("/api/module-outlines", moduleOutlineRoutes);
 app.use("/api/notifications", notificationRoutes);
 
 
+// Error handler to return JSON for body parse errors and others
+app.use((err, req, res, next) => {
+  console.error("Express error:", err && err.stack ? err.stack : err);
+  if (err && err.type === "entity.parse.failed") {
+    return res.status(400).json({ error: "Invalid JSON payload" });
+  }
+  res.status(err?.status || 500).json({ error: err?.message || "Internal Server Error" });
+});
+
+
 export const listen = (port, callback) => {
   app.listen(port, callback);
 };

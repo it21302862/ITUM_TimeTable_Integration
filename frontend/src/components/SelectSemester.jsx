@@ -290,13 +290,12 @@ const SelectSemester = () => {
                       </p>
                     </div>
                     <p className="text-[#4c669a] dark:text-gray-400 text-base font-normal leading-normal">
-                      Review how these semesters align with your long-term
-                      graduation requirements and degree path.
+                      Manage academic semesters, course schedules, and institutional activities efficiently from a centralized platform.
                     </p>
                   </div>
 
                   <button className="flex min-w-[140px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 px-5 bg-primary-blue text-white hover:bg-primary-blue/90 transition-colors text-sm font-bold leading-normal shadow-lg shadow-primary-blue/20">
-                    <span className="truncate">View Degree Path</span>
+                    <span className="truncate">View Academic Calender</span>
                   </button>
                 </div>
               </div>
@@ -304,7 +303,7 @@ const SelectSemester = () => {
           </main>
 
           {/* Emergency Chat Widget */}
-          <div className="fixed bottom-6 right-6 z-50">
+          {/* <div className="fixed bottom-6 right-6 z-50">
             <button className="flex items-center justify-center w-14 h-14 bg-primary-blue text-white rounded-full shadow-2xl hover:scale-110 transition-transform group relative">
               <span className="material-symbols-outlined text-3xl">chat</span>
               <span className="absolute -top-1 -right-1 bg-red-500 w-4 h-4 rounded-full border-2 border-white dark:border-background-dark" />
@@ -312,7 +311,7 @@ const SelectSemester = () => {
                 Need help? Chat with Support
               </div>
             </button>
-          </div>
+          </div> */}
 
           {/* Simple Footer */}
           <footer className="px-4 md:px-40 py-8 border-t border-[#cfd7e7] dark:border-gray-800 text-center">

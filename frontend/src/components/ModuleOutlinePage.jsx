@@ -267,7 +267,7 @@ const ModuleOutlinePage = () => {
         </nav>
 
         {/* Bottom Profile */}
-        <div className="p-4 border-t border-slate-200 dark:border-slate-800">
+        {/* <div className="p-4 border-t border-slate-200 dark:border-slate-800">
           <div className="flex items-center gap-3 px-4 py-3 bg-slate-100 dark:bg-slate-900/50 rounded-lg">
             <div className="w-8 h-8 bg-gradient-to-br from-purple-400 to-pink-600 rounded-full flex items-center justify-center text-white text-xs font-bold">
               A
@@ -281,7 +281,7 @@ const ModuleOutlinePage = () => {
               </p>
             </div>
           </div>
-        </div>
+        </div> */}
       </div>
 
       {/* Main Content */}

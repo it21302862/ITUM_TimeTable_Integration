@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { api } from "../services/api";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -7,6 +8,14 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState("");
+  const [showForgot, setShowForgot] = useState(false);
+  const [fpPhone, setFpPhone] = useState("");
+  const [fpCode, setFpCode] = useState("");
+  const [fpDevCode, setFpDevCode] = useState("");
+  const [fpNewPassword, setFpNewPassword] = useState("");
+  const [fpStep, setFpStep] = useState(1);
+  const [fpMessage, setFpMessage] = useState("");
+  const [fpLoading, setFpLoading] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
 
@@ -161,6 +170,7 @@ export default function LoginPage() {
               </label>
               <a
                 href="#"
+                onClick={(e) => { e.preventDefault(); setShowForgot(true); setFpStep(1); setFpMessage(""); }}
                 className="text-primary text-sm font-medium hover:underline"
               >
                 Forgot Password?
@@ -185,7 +195,7 @@ export default function LoginPage() {
             <p className="text-[#4c669a] dark:text-gray-400 text-sm">
               Don't have an account yet?
             </p>
-            <button className="flex w-full cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 px-4 bg-blue-100 text-blue-600 text-sm font-semibold leading-normal hover:bg-primary/20 transition-colors">
+            <button onClick={() => navigate('/register')} className="flex w-full cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 px-4 bg-blue-100 text-blue-600 text-sm font-semibold leading-normal hover:bg-primary/20 transition-colors">
               <span className="truncate">Create Faculty Account</span>
             </button>
           </div>
@@ -209,6 +219,83 @@ export default function LoginPage() {
           </div>
         </div>
       </div>
+
+      {/* Forgot Password Modal */}
+      {showForgot && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+          <div className="w-full max-w-md bg-white dark:bg-gray-800 p-6 rounded-lg">
+            <h3 className="text-lg font-semibold mb-4 text-[#0d121b] dark:text-white">Forgot Password</h3>
+            {fpMessage && <div className="mb-3 text-sm text-green-700 dark:text-green-300">{fpMessage}</div>}
+            {fpStep === 1 && (
+              <form onSubmit={async (e) => {
+                e.preventDefault();
+                setFpLoading(true); setFpMessage(""); setFpDevCode("");
+                try {
+                  const result = await api.requestPasswordReset(fpPhone);
+                  if (result.devCode) {
+                    setFpDevCode(result.devCode);
+                    setFpCode(result.devCode);
+                    setFpMessage(result.devHint || result.message);
+                  } else {
+                    setFpMessage(result.message || "If the phone is registered, a code was sent.");
+                  }
+                  setFpStep(2);
+                } catch (err) {
+                  setFpMessage(err.message || "Request failed");
+                } finally { setFpLoading(false); }
+              }}>
+                <label className="flex flex-col mb-3">
+                  <span className="text-sm text-[#4c669a] dark:text-gray-400 mb-1">Phone number</span>
+                  <input required value={fpPhone} onChange={(e) => setFpPhone(e.target.value)} className="form-input p-2 border rounded" placeholder="+94771234567" />
+                </label>
+                <p className="text-xs text-gray-500 mb-3">
+                  Use the phone number saved on your instructor profile (include country code, e.g. +94...).
+                </p>
+                <div className="flex gap-2 justify-end">
+                  <button type="button" onClick={() => setShowForgot(false)} className="px-3 py-2 rounded border">Cancel</button>
+                  <button type="submit" disabled={fpLoading} className="px-3 py-2 rounded bg-blue-600 text-white">{fpLoading ? 'Sending...' : 'Send code'}</button>
+                </div>
+              </form>
+            )}
+            {fpStep === 2 && (
+              <form onSubmit={async (e) => {
+                e.preventDefault(); setFpLoading(true); setFpMessage("");
+                try {
+                  await api.resetPassword(fpPhone, fpCode, fpNewPassword);
+                  setFpMessage("Password reset successful. You may now log in.");
+                  setFpStep(3);
+                } catch (err) {
+                  setFpMessage(err.message || "Reset failed");
+                } finally { setFpLoading(false); }
+              }}>
+                {fpDevCode && (
+                  <div className="mb-3 p-3 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-800">
+                    <strong>Development code:</strong> {fpDevCode}
+                    <p className="text-xs mt-1">SMS is not configured — use this code to continue.</p>
+                  </div>
+                )}
+                <label className="flex flex-col mb-2">
+                  <span className="text-sm text-[#4c669a] dark:text-gray-400 mb-1">Code</span>
+                  <input required value={fpCode} onChange={(e) => setFpCode(e.target.value)} className="form-input p-2 border rounded" />
+                </label>
+                <label className="flex flex-col mb-3">
+                  <span className="text-sm text-[#4c669a] dark:text-gray-400 mb-1">New Password</span>
+                  <input required type="password" value={fpNewPassword} onChange={(e) => setFpNewPassword(e.target.value)} className="form-input p-2 border rounded" />
+                </label>
+                <div className="flex gap-2 justify-end">
+                  <button type="button" onClick={() => setShowForgot(false)} className="px-3 py-2 rounded border">Close</button>
+                  <button type="submit" disabled={fpLoading} className="px-3 py-2 rounded bg-blue-600 text-white">{fpLoading ? 'Resetting...' : 'Reset Password'}</button>
+                </div>
+              </form>
+            )}
+            {fpStep === 3 && (
+              <div className="flex flex-col items-end gap-2">
+                <button onClick={() => setShowForgot(false)} className="px-3 py-2 rounded bg-blue-600 text-white">Done</button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

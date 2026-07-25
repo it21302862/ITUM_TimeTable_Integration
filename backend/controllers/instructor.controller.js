@@ -5,6 +5,10 @@ import bcrypt from "bcrypt";
 export async function create(req, res) {
   try {
     const { password, ...instructorData } = req.body;
+    // Handle uploaded image
+    if (req.file) {
+      instructorData.imageUrl = `/uploads/${req.file.filename}`;
+    }
 
     // Hash password if provided
     if (password) {

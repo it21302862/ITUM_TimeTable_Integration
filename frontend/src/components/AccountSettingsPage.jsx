@@ -17,6 +17,7 @@ export default function AccountSettingsPage() {
     department: "",
     role: "",
     address: "",
+    phone: "",
     imageUrl: "",
   });
 
@@ -28,6 +29,9 @@ export default function AccountSettingsPage() {
   const [actionLoadingId, setActionLoadingId] = useState(null);
   const [emailNotifications, setEmailNotifications] = useState(true);
   const [systemNotifications, setSystemNotifications] = useState(true);
+  const [showEmailPref, setShowEmailPref] = useState(false);
+  const [showPhonePref, setShowPhonePref] = useState(false);
+  const [shareSchedulePref, setShareSchedulePref] = useState(true);
 
   // Load user profile on mount
   useEffect(() => {
@@ -44,11 +48,18 @@ export default function AccountSettingsPage() {
           department: response.department || "",
           role: response.role || "",
           address: response.address || "",
+          phone: response.phone || "",
           imageUrl: response.imageUrl || "",
+          showEmail: !!response.showEmail,
+          showPhone: !!response.showPhone,
+          shareSchedule: response.shareSchedule !== false,
         });
         if (response.imageUrl) {
           setImagePreview(response.imageUrl);
         }
+        setShowEmailPref(!!response.showEmail);
+        setShowPhonePref(!!response.showPhone);
+        setShareSchedulePref(response.shareSchedule !== false);
 
         // Load notification count for sidebar badge
         try {
@@ -193,6 +204,10 @@ export default function AccountSettingsPage() {
       formData.append("email", userData.email);
       formData.append("department", userData.department);
       formData.append("address", userData.address);
+      formData.append("phone", userData.phone || "");
+      formData.append("showEmail", showEmailPref);
+      formData.append("showPhone", showPhonePref);
+      formData.append("shareSchedule", shareSchedulePref);
 
       if (imageFile) {
         formData.append("image", imageFile);
@@ -309,6 +324,10 @@ export default function AccountSettingsPage() {
                     {userData.department}
                   </p>
                 )}
+                {/* Phone (respect privacy) */}
+                {userData.phone && (showPhonePref || userData.showPhone) && (
+                  <p className="text-xs text-gray-600 dark:text-gray-400 text-center mt-2">{userData.phone}</p>
+                )}
 
                 {/* Profile Strength */}
                 <div className="w-full mt-4">
@@ -345,7 +364,14 @@ export default function AccountSettingsPage() {
                   </span>
                   <span>Academic Plans</span>
                 </button>
-                <button className="w-full flex items-center gap-2 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors">
+                <button
+                  onClick={() => setActiveView("privacy")}
+                  className={`w-full flex items-center gap-2 px-4 py-2 text-sm rounded-lg transition-colors ${
+                    activeView === "privacy"
+                      ? "bg-blue-50 dark:bg-blue-900/30 text-blue-600 font-medium"
+                      : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+                  }`}
+                >
                   <span className="material-symbols-outlined text-base">
                     lock
                   </span>
@@ -451,6 +477,8 @@ export default function AccountSettingsPage() {
                     />
                   </label>
                 </div>
+
+                {/* (Privacy Settings removed from Notification view) */}
 
                 <div>
                   <div className="flex items-center gap-2 mb-4 border-b border-gray-200 dark:border-gray-700">
@@ -647,6 +675,81 @@ export default function AccountSettingsPage() {
                   )}
                 </div>
               </div>
+            ) : activeView === "privacy" ? (
+              <div className="bg-white dark:bg-gray-900 rounded-xl shadow-md p-8">
+                <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+                  Privacy Settings
+                </h2>
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-6">
+                  Control how your contact information and schedule are shared with others.
+                </p>
+
+                <div className="space-y-6">
+                  <div className="p-6 bg-gray-50 dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700">
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                      Contact Visibility
+                    </h3>
+                    <p className="text-xs text-gray-500 mb-4">
+                      Choose whether colleagues can see your email address and phone number.
+                    </p>
+                    <label className="flex items-center justify-between gap-4 mb-4">
+                      <span>
+                        <p className="font-medium text-gray-900 dark:text-white">Show my email address</p>
+                        <p className="text-xs text-gray-500">Allow others to contact you using your university email.</p>
+                      </span>
+                      <input
+                        type="checkbox"
+                        checked={showEmailPref}
+                        onChange={(e) => setShowEmailPref(e.target.checked)}
+                        className="w-5 h-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                      />
+                    </label>
+                    <label className="flex items-center justify-between gap-4">
+                      <span>
+                        <p className="font-medium text-gray-900 dark:text-white">Show my phone number</p>
+                        <p className="text-xs text-gray-500">Allow others to reach you by phone if needed.</p>
+                      </span>
+                      <input
+                        type="checkbox"
+                        checked={showPhonePref}
+                        onChange={(e) => setShowPhonePref(e.target.checked)}
+                        className="w-5 h-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                      />
+                    </label>
+                  </div>
+
+                  <div className="p-6 bg-gray-50 dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700">
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                      Schedule Privacy
+                    </h3>
+                    <p className="text-xs text-gray-500 mb-4">
+                      Decide whether your timetable and academic plans can be shared with other instructors and staff.
+                    </p>
+                    <label className="flex items-center justify-between gap-4">
+                      <span>
+                        <p className="font-medium text-gray-900 dark:text-white">Share my schedule</p>
+                        <p className="text-xs text-gray-500">Enable others to see your teaching availability and timetable.</p>
+                      </span>
+                      <input
+                        type="checkbox"
+                        checked={shareSchedulePref}
+                        onChange={(e) => setShareSchedulePref(e.target.checked)}
+                        className="w-5 h-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                      />
+                    </label>
+                  </div>
+
+                  <div className="flex justify-end">
+                    <button
+                      type="button"
+                      onClick={handleSaveChanges}
+                      className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors"
+                    >
+                      Save Privacy Settings
+                    </button>
+                  </div>
+                </div>
+              </div>
             ) : (
             <>
             {/* Account Settings Card */}
@@ -706,6 +809,20 @@ export default function AccountSettingsPage() {
                         type="text"
                         name="department"
                         value={userData.department}
+                        onChange={handleInputChange}
+                        className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+
+                    {/* Phone */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Phone
+                      </label>
+                      <input
+                        type="text"
+                        name="phone"
+                        value={userData.phone}
                         onChange={handleInputChange}
                         className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
                       />

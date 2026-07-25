@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import LoginPage from "./components/LoginPage";
+import RegisterFacultyPage from "./components/RegisterFacultyPage";
 import AccountSettingsPage from "./components/AccountSettingsPage";
 import AcademicPlansPage from "./components/AcademicPlansPage";
 import SelectAcademicYear from "./components/SelectAcademicYear";
@@ -17,6 +18,7 @@ function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/login" element={<LoginPage />} />
+        <Route path="/register" element={<RegisterFacultyPage />} />
         <Route path="/" element={<LoginPage />} />
         
         {/* Protected Routes - Require authentication */}
