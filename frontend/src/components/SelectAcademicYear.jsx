@@ -172,9 +172,10 @@ const SelectAcademicYear = () => {
           </h1>
           <div class="mb-12">
             <p class="text-[#4c669a] dark:text-gray-400 text-lg font-normal leading-normal text-center max-w-2xl mx-auto">
-              Welcome to the Timetable Portal. Choose the relevant academic
-              period to view your schedules, course plans, and semester
-              breakdowns.
+              Welcome to the Timetable Portal.
+            </p>
+            <p class="text-[#4c669a] dark:text-gray-400 text-lg font-normal leading-normal text-center max-w-2xl mx-auto">
+              Plan and oversee academic semesters, module coordination, and timetable management through a unified staff portal.
             </p>
           </div>
         </div>
