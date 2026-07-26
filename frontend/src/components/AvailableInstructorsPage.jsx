@@ -363,7 +363,7 @@ const AvailableInstructorsPage = () => {
         </aside>
 
         {/* Main Content */}
-        <main className="flex-1 overflow-y-auto p-8 bg-[#f6f6f8] dark:bg-background-dark custom-scrollbar">
+        <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 bg-[#f6f6f8] dark:bg-background-dark custom-scrollbar">
           <div className="max-w-6xl mx-auto">
             {/* Header Section */}
             <div className="flex flex-col gap-1 mb-8">
@@ -376,7 +376,7 @@ const AvailableInstructorsPage = () => {
                   Availability Search
                 </span>
               </div>
-              <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6 mt-4">
+              <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-3 sm:gap-4 lg:gap-6 mt-2 sm:mt-4">
                 <div>
                   <h1 className="text-3xl font-black tracking-tight text-[#0d121b] dark:text-white">
                     Available Instructors
@@ -386,7 +386,7 @@ const AvailableInstructorsPage = () => {
                     substitution.
                   </p>
                 </div>
-                <div className="flex flex-wrap items-center gap-4">
+                <div className="flex flex-wrap items-center gap-2 sm:gap-3 lg:gap-4">
                   <div className="flex items-center gap-3 bg-white dark:bg-gray-900 px-4 py-2 rounded-xl border border-gray-200 dark:border-gray-800 shadow-sm">
                     <span className="material-symbols-outlined text-primary text-xl">
                       schedule
@@ -421,7 +421,7 @@ const AvailableInstructorsPage = () => {
             </div>
 
             {/* Instructors Cards Grid */}
-            <div className="grid grid-cols-1 gap-6">
+            <div className="grid grid-cols-1 gap-4 sm:gap-6">
               {loading ? (
                 <div className="flex items-center justify-center py-12">
                   <div className="text-center">
@@ -447,7 +447,7 @@ const AvailableInstructorsPage = () => {
                       key={instructor.id}
                       className="bg-white dark:bg-gray-900 rounded-2xl p-6 border border-[#e7ebf3] dark:border-gray-800 shadow-sm hover:shadow-xl hover:border-primary/20 transition-all group relative"
                     >
-                      <div className="flex flex-col md:flex-row items-start md:items-center gap-6">
+                      <div className="flex flex-col md:flex-row items-start md:items-center gap-4 sm:gap-6">
                         {/* Avatar */}
                         <div className="relative shrink-0">
                           <div
@@ -464,7 +464,7 @@ const AvailableInstructorsPage = () => {
 
                         {/* Content */}
                         <div className="flex-1 w-full">
-                          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                          <div className="flex flex-col md:flex-row md:items-center justify-between gap-2 sm:gap-3 lg:gap-4">
                             <div>
                               <div className="flex items-center gap-3">
                                 <h3 className="text-xl font-black text-[#0d121b] dark:text-white">
@@ -489,8 +489,8 @@ const AvailableInstructorsPage = () => {
                                 {instructor.department || "Not Assigned"}
                               </p>
                             </div>
-                            <div className="flex items-center gap-6">
-                              <div className="flex flex-col items-end">
+                            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4 lg:gap-6 flex-wrap">
+                              <div className="flex flex-col items-start sm:items-end">
                                 <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest leading-none mb-1">
                                   Status
                                 </span>
@@ -506,7 +506,7 @@ const AvailableInstructorsPage = () => {
                               </div>
                               <button
                                   onClick={() => openAssignModal(instructor)}
-                                  className="bg-blue-500 text-white px-6 py-2.5 rounded-xl font-bold text-sm shadow-lg shadow-primary/20 hover:bg-primary/90 transition-all flex items-center gap-2"
+                                  className="bg-blue-500 text-white px-4 sm:px-6 py-2.5 rounded-xl font-bold text-sm shadow-lg shadow-primary/20 hover:bg-primary/90 transition-all flex items-center gap-2 whitespace-nowrap"
                                 >
                                   <span className="material-symbols-outlined text-lg">
                                     add_task
@@ -517,12 +517,12 @@ const AvailableInstructorsPage = () => {
                           </div>
 
                           {/* Info Footer */}
-                          <div className="mt-4 pt-4 border-t border-gray-100 dark:border-gray-800 flex items-center gap-8 flex-wrap">
-                            <div className="flex items-center gap-2">
-                              <span className="material-symbols-outlined text-gray-400 text-lg">
+                          <div className="mt-3 sm:mt-4 pt-3 sm:pt-4 border-t border-gray-100 dark:border-gray-800 flex items-center gap-3 sm:gap-4 lg:gap-6 flex-wrap">
+                            <div className="flex items-start gap-1 sm:gap-2 min-w-0 flex-1">
+                              <span className="material-symbols-outlined text-gray-400 text-base sm:text-lg shrink-0 mt-0.5">
                                 location_on
                               </span>
-                              <span className="text-xs text-gray-600 dark:text-gray-400 font-medium">
+                              <span className="text-xs text-gray-600 dark:text-gray-400 font-medium truncate">
                                 {instructor.address || "Office Location TBD"}
                               </span>
                             </div>
@@ -588,7 +588,7 @@ const AvailableInstructorsPage = () => {
         </main>
 
         {/* Right Sidebar - Quick Summary */}
-        <aside className="w-80 bg-white dark:bg-gray-900 border-l border-[#e7ebf3] dark:border-gray-800 flex flex-col shrink-0 overflow-y-auto">
+        <aside className="hidden lg:flex lg:w-80 bg-white dark:bg-gray-900 border-l border-[#e7ebf3] dark:border-gray-800 flex-col shrink-0 overflow-y-auto">
           <div className="p-6">
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-lg font-black tracking-tight">
@@ -669,10 +669,10 @@ const AvailableInstructorsPage = () => {
         </aside>
       </div>
       {showModal && selectedInstructor && (
-        <div className="fixed inset-0 bg-gray-900/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-gray-900 w-full max-w-2xl rounded-3xl shadow-2xl overflow-hidden border border-gray-200 dark:border-gray-800 animate-in fade-in zoom-in duration-200">
+        <div className="fixed inset-0 bg-gray-900/60 backdrop-blur-sm z-[100] flex items-center justify-center p-3 sm:p-4">
+          <div className="bg-white dark:bg-gray-900 w-full max-w-2xl rounded-2xl sm:rounded-3xl shadow-2xl overflow-hidden border border-gray-200 dark:border-gray-800 animate-in fade-in zoom-in duration-200 max-h-[90vh] overflow-y-auto">
             {/* Header */}
-            <div className="px-8 py-6 border-b border-gray-100 dark:border-gray-800 flex justify-between items-center">
+            <div className="px-4 sm:px-8 py-4 sm:py-6 border-b border-gray-100 dark:border-gray-800 flex justify-between items-center sticky top-0 bg-white dark:bg-gray-900 z-10">
               <div>
                 <div className="flex items-center gap-2 text-emerald-600 mb-1">
                   <span className="material-symbols-outlined text-lg">
@@ -682,7 +682,7 @@ const AvailableInstructorsPage = () => {
                         ? "error"
                         : "check_circle"}
                   </span>
-                  <span className="text-[10px] font-black uppercase tracking-widest">
+                  <span className="text-[9px] sm:text-[10px] font-black uppercase tracking-widest">
                     {loadingSessions
                       ? "Checking Availability"
                       : sessionsError
@@ -690,7 +690,7 @@ const AvailableInstructorsPage = () => {
                         : "Semester Check Successful"}
                   </span>
                 </div>
-                <h2 className="text-2xl font-black">
+                <h2 className="text-lg sm:text-2xl font-black">
                   Assignment Note & Conflict Review
                 </h2>
               </div>
@@ -710,7 +710,7 @@ const AvailableInstructorsPage = () => {
             </div>
 
             {/* Body */}
-            <div className="px-8 py-6 max-h-[70vh] overflow-y-auto custom-scrollbar">
+            <div className="px-4 sm:px-8 py-4 sm:py-6">
               {/* Availability Review */}
               <div className="mb-8">
                 <div className="flex items-center justify-between mb-4">
@@ -722,7 +722,7 @@ const AvailableInstructorsPage = () => {
                   </span>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                <div className="grid grid-cols-1 gap-2 sm:gap-3">
                   {(assignableData?.semesterReview || []).map((sem) => {
                     const isClear = sem.status === "NO_CONFLICT";
                     const isAdvisory =
@@ -960,9 +960,9 @@ const AvailableInstructorsPage = () => {
             </div>
 
             {/* Footer */}
-            <div className="px-8 py-6 bg-gray-50 dark:bg-gray-800 flex items-center justify-end gap-3 border-t">
+            <div className="px-4 sm:px-8 py-4 sm:py-6 bg-gray-50 dark:bg-gray-800 flex flex-col sm:flex-row items-center justify-end gap-2 sm:gap-3 border-t sticky bottom-0">
               {sendError && (
-                <p className="text-red-500 text-sm mr-auto">{sendError}</p>
+                <p className="text-red-500 text-xs sm:text-sm mr-auto order-3 sm:order-1 w-full sm:w-auto">{sendError}</p>
               )}
               <button
                 onClick={() => {
@@ -971,14 +971,14 @@ const AvailableInstructorsPage = () => {
                   setSelectedSession(null);
                   setAssignableData(null);
                 }}
-                className="px-6 py-2.5 rounded-xl font-bold text-sm text-gray-600 hover:bg-gray-100"
+                className="px-4 sm:px-6 py-2 sm:py-2.5 rounded-xl font-bold text-sm text-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 w-full sm:w-auto order-2"
               >
                 Cancel
               </button>
               <button
                 onClick={handleSendNote}
                 disabled={sendingNote || !note.trim() || !selectedSession}
-                className="px-8 py-2.5 bg-blue-500 text-white rounded-xl font-bold text-sm shadow-lg hover:bg-primary/90 flex items-center gap-2 disabled:opacity-50"
+                className="px-6 sm:px-8 py-2 sm:py-2.5 bg-blue-500 text-white rounded-xl font-bold text-sm shadow-lg hover:bg-primary/90 flex items-center justify-center gap-2 disabled:opacity-50 w-full sm:w-auto order-1 sm:order-3"
               >
                 <span className="material-symbols-outlined text-lg">send</span>
                 {sendingNote ? "Sending..." : "Confirm and Send Note"}

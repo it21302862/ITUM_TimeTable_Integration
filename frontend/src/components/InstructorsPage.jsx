@@ -532,9 +532,9 @@ const InstructorsPage = () => {
         </aside>
 
         {/* Main Content */}
-        <main className="flex-1 p-8 bg-background-light dark:bg-background-dark overflow-hidden">
+        <main className="flex-1 p-4 sm:p-6 lg:p-8 bg-background-light dark:bg-background-dark overflow-y-auto">
           <div className="max-w-6xl mx-auto">
-            <div className="mb-8">
+            <div className="mb-6 sm:mb-8">
               <div className="flex items-center gap-2 text-xs font-medium text-[#4c669a] mb-1">
                 <span>Faculty Management</span>
                 <span className="material-symbols-outlined text-xs">
@@ -595,8 +595,8 @@ const InstructorsPage = () => {
             </div>
 
             {/* Instructor Cards Grid */}
-            <div className="h-[calc(100vh-280px)] overflow-y-auto pr-2">
-              <div className="grid grid-cols-1 gap-6">
+            <div className="">
+              <div className="grid grid-cols-1 gap-4 sm:gap-6">
                 {sortedInstructors.map((ins) => {
                   const color = getColorClass(ins.name);
                   const modules = instructorModulesMap[ins.id];
@@ -698,8 +698,8 @@ const InstructorsPage = () => {
 
                           {/* Info Grid */}
                           <div
-                            className="mt-6 grid grid-cols-2 lg:grid-cols-4 gap-6
-                         pt-6 border-t border-gray-100 dark:border-gray-800"
+                            className="mt-4 sm:mt-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6
+                         pt-4 sm:pt-6 border-t border-gray-100 dark:border-gray-800"
                           >
                             {/* Contact */}
                             <div>
@@ -777,7 +777,7 @@ const InstructorsPage = () => {
 
         {/* Right Sidebar - Selected Schedule Preview */}
         {selected && (
-          <aside className="w-80 bg-white dark:bg-gray-900 border-l border-[#e7ebf3] dark:border-gray-800 flex flex-col">
+          <aside className="hidden lg:flex lg:w-80 bg-white dark:bg-gray-900 border-l border-[#e7ebf3] dark:border-gray-800 flex-col">
             <div className="p-6 flex-1 overflow-y-auto">
               <div className="flex justify-between items-center mb-6">
                 <h2 className="text-lg font-bold">Active Preview</h2>
