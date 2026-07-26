@@ -257,7 +257,7 @@ const AcademicPlansPage = () => {
             </svg>
           </div>
           <h2 className="text-[#0d121b] dark:text-white text-lg font-bold leading-tight tracking-[-0.015em]">
-            UniPlan
+            UniTime Manager
           </h2>
         </div>
       </header>

@@ -244,7 +244,7 @@ const SelectAcademicYear = () => {
         <div className="flex flex-col md:flex-row justify-between items-center gap-4 text-sm text-[#4c669a] dark:text-gray-500">
           
             <p className="text-gray-medium text-sm">
-              © 2026 UniTime Academic Systems. All rights reserved.
+              © 2026 UniTime Manager Academic Systems. All rights reserved.
             </p>
             <div className="flex gap-6">
               <a href="#" class="hover:text-primary transition-colors">
