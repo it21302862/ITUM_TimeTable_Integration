@@ -8,3 +8,4 @@ backend/package-lock.json
 backend/.env
 backend/.env.example
 frontend/package-lock.json
+frontend/.env
