@@ -351,9 +351,9 @@ const InstructorsPage = () => {
     );
 
   return (
-    <div className="bg-background-light dark:bg-background-dark text-[#0d121b] dark:text-white min-h-screen flex flex-col">
+    <div className="bg-background-light dark:bg-background-dark text-[#0d121b] dark:text-white min-h-screen flex flex-col overflow-x-hidden">
       {/* Top Header */}
-      <header className="flex items-center justify-between whitespace-nowrap border-b border-solid border-[#cfd7e7] dark:border-gray-800 bg-white dark:bg-background-dark px-4 sm:px-6 py-3">
+      <header className="flex flex-wrap items-center justify-between border-b border-solid border-[#cfd7e7] dark:border-gray-800 bg-white dark:bg-background-dark px-4 sm:px-6 py-3">
         <div className="flex items-center gap-4 text-primary-blue">
           <div className="size-8">
             <svg
@@ -434,10 +434,10 @@ const InstructorsPage = () => {
         </div>
       </div>
 
-      <div className="flex flex-1 overflow-hidden">
+      <div className="flex flex-1 overflow-hidden min-h-0">
         {/* Left Sidebar - Directory - Hidden on mobile unless toggled */}
         <aside
-          className={`${sidebarOpen ? "block" : "hidden"} lg:block w-64 bg-white dark:bg-gray-900 border-r border-[#e7ebf3] dark:border-gray-800 flex flex-col absolute lg:relative z-40 h-full`}
+          className={`${sidebarOpen ? "block" : "hidden"} lg:block w-64 bg-white dark:bg-gray-900 border-r border-[#e7ebf3] dark:border-gray-800 flex flex-col absolute lg:relative z-40 h-full min-h-0 overflow-y-auto`}
         >
           <div className="p-6 flex-1 flex flex-col gap-6">
             <div className="space-y-4">
@@ -498,13 +498,13 @@ const InstructorsPage = () => {
                 Quick Actions
               </h3>
               <div className="grid grid-cols-1 gap-2">
-                <button
+                {/* <button
                   onClick={openAddModal}
                   className="flex items-center gap-3 px-4 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-all font-bold shadow-md"
                 >
                   <span className="material-symbols-outlined">person_add</span>
                   <span>Add Instructor</span>
-                </button>
+                </button> */}
                 {yearId && semesterId ? (
                   <button
                     onClick={() =>
@@ -532,8 +532,8 @@ const InstructorsPage = () => {
         </aside>
 
         {/* Main Content */}
-        <main className="flex-1 p-4 sm:p-6 lg:p-8 bg-background-light dark:bg-background-dark overflow-y-auto">
-          <div className="max-w-6xl mx-auto">
+        <main className="flex-1 p-4 sm:p-6 lg:p-8 bg-background-light dark:bg-background-dark overflow-y-auto overflow-x-hidden min-h-0">
+          <div className="max-w-6xl mx-auto w-full">
             <div className="mb-6 sm:mb-8">
               <div className="flex items-center gap-2 text-xs font-medium text-[#4c669a] mb-1">
                 <span>Faculty Management</span>
@@ -544,7 +544,7 @@ const InstructorsPage = () => {
                   Instructor Directory
                 </span>
               </div>
-              <div className="flex justify-between items-end">
+              <div className="flex flex-col gap-4 md:flex-row md:items-end justify-between">
                 <h1 className="text-3xl font-black tracking-tight">
                   Instructor Directory
                 </h1>
@@ -621,7 +621,7 @@ const InstructorsPage = () => {
                    shadow-sm hover:shadow-xl hover:border-primary/20
                    transition-all cursor-pointer group"
                     >
-                      <div className="flex items-start gap-6">
+                      <div className="flex flex-col sm:flex-row items-start gap-6">
                         {/* Avatar */}
                         <div
                           className={`size-20 rounded-2xl flex items-center justify-center
@@ -633,7 +633,7 @@ const InstructorsPage = () => {
 
                         <div className="flex-1">
                           {/* Header */}
-                          <div className="flex justify-between items-start">
+                          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                             <div>
                               <div className="flex items-center gap-2">
                                 <h3 className="text-xl font-black text-blue-500 dark:text-white">
@@ -657,7 +657,7 @@ const InstructorsPage = () => {
                             </div>
 
                             {/* Actions */}
-                            <div className="flex gap-2">
+                            {/* <div className="flex gap-2">
                               <button
                                 onClick={(e) => e.stopPropagation()}
                                 className="p-2.5 text-gray-400 hover:text-primary
@@ -666,9 +666,9 @@ const InstructorsPage = () => {
                                 <span className="material-symbols-outlined">
                                   calendar_today
                                 </span>
-                              </button>
+                              </button> */}
 
-                              <button
+                              {/* <button
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   startEdit(ins);
@@ -679,9 +679,9 @@ const InstructorsPage = () => {
                                 <span className="material-symbols-outlined text-green-400">
                                   edit
                                 </span>
-                              </button>
+                              </button> */}
 
-                              <button
+                              {/* <button
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   handleDelete(ins);
@@ -692,8 +692,8 @@ const InstructorsPage = () => {
                                 <span className="material-symbols-outlined text-red-500">
                                   delete
                                 </span>
-                              </button>
-                            </div>
+                              </button> */}
+                            {/* </div> */}
                           </div>
 
                           {/* Info Grid */}
@@ -777,7 +777,7 @@ const InstructorsPage = () => {
 
         {/* Right Sidebar - Selected Schedule Preview */}
         {selected && (
-          <aside className="hidden lg:flex lg:w-80 bg-white dark:bg-gray-900 border-l border-[#e7ebf3] dark:border-gray-800 flex-col">
+          <aside className="hidden lg:flex lg:w-80 bg-white dark:bg-gray-900 border-l border-[#e7ebf3] dark:border-gray-800 flex-col min-h-0 overflow-y-auto">
             <div className="p-6 flex-1 overflow-y-auto">
               <div className="flex justify-between items-center mb-6">
                 <h2 className="text-lg font-bold">Active Preview</h2>
