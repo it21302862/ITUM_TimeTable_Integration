@@ -17,7 +17,7 @@ const app = express();
 
 const allowedOrigins = [
   "http://localhost:5173",                 // Local Vite
-  "https://itum-uni-time-manager.vercel.app/", // deployed frontend
+  "https://itum-uni-time-manager.vercel.app", // deployed frontend
 ];
 
 app.use(
