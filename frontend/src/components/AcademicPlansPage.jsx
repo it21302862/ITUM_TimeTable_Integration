@@ -16,7 +16,19 @@ const AcademicPlansPage = () => {
   const [planningNote, setPlanningNote] = useState("");
 
   // Time slots for the timetable
-  const timeSlots = ["08:15", "09:15", "10:15", "11:15", "12:15", "13:15", "14:15", "15:15", "16:15", "17:15","18:15"];
+  const timeSlots = [
+    "08:15",
+    "09:15",
+    "10:15",
+    "11:15",
+    "12:15",
+    "13:15",
+    "14:15",
+    "15:15",
+    "16:15",
+    "17:15",
+    "18:15",
+  ];
   const days = ["MON", "TUE", "WED", "THU", "FRI"];
 
   useEffect(() => {
@@ -30,30 +42,55 @@ const AcademicPlansPage = () => {
       const userProfile = await api.getUserProfile();
       setUserData(userProfile);
 
-      const currentSemesters = await api.getCurrentSemesters();
-      
-      const sem1 = currentSemesters.find(s => s.name === "Semester 1" || s.name?.includes("1"));
-      const sem3 = currentSemesters.find(s => s.name === "Semester 3" || s.name?.includes("3"));
+      // const currentSemesters = await api.getCurrentSemesters();
 
-      if (!sem1 || !sem3) {
-        setError("Semester 1 and Semester 3 with CURRENT status not found");
+      // const sem1 = currentSemesters.find(s => s.name === "Semester 1" || s.name?.includes("1"));
+      // const sem3 = currentSemesters.find(s => s.name === "Semester 3" || s.name?.includes("3"));
+
+      // if (!sem1 || !sem3) {
+      //   setError("Semester 1 and Semester 3 with CURRENT status not found");
+      //   return;
+      // }
+
+      // setSemester1(sem1);
+      // setSemester3(sem3);
+
+      // const [sem1Result, sem3Result] = await Promise.all([
+      //   api.getTimetableSlotsByInstructor(userProfile.id, { semesterId: sem1.id }),
+      //   api.getTimetableSlotsByInstructor(userProfile.id, { semesterId: sem3.id })
+      // ]);
+
+      // setSemester1Slots(sem1Result.slots || []);
+      // setSemester3Slots(sem3Result.slots || []);
+
+      // // Calculate conflict status, resource usage, etc.
+      // calculateStats(sem1Result.slots || [], sem3Result.slots || []);
+
+      const currentSemesters = await api.getCurrentSemesters();
+
+      if (currentSemesters.length < 2) {
+        setError("Current semesters not found");
         return;
       }
 
-      setSemester1(sem1);
-      setSemester3(sem3);
+      const [semesterA, semesterB] = currentSemesters;
 
-      const [sem1Result, sem3Result] = await Promise.all([
-        api.getTimetableSlotsByInstructor(userProfile.id, { semesterId: sem1.id }),
-        api.getTimetableSlotsByInstructor(userProfile.id, { semesterId: sem3.id })
+      setSemester1(semesterA);
+      setSemester3(semesterB);
+
+      const [resultA, resultB] = await Promise.all([
+        api.getTimetableSlotsByInstructor(userProfile.id, {
+          semesterId: semesterA.id,
+        }),
+        api.getTimetableSlotsByInstructor(userProfile.id, {
+          semesterId: semesterB.id,
+        }),
       ]);
 
-      setSemester1Slots(sem1Result.slots || []);
-      setSemester3Slots(sem3Result.slots || []);
+      setSemester1Slots(resultA.slots || []);
+      setSemester3Slots(resultB.slots || []);
 
-      // Calculate conflict status, resource usage, etc.
-      calculateStats(sem1Result.slots || [], sem3Result.slots || []);
-
+      calculateStats(resultA.slots || [], resultB.slots || []);
     } catch (err) {
       console.error("Error loading academic plans:", err);
       setError(err.message);
@@ -65,30 +102,34 @@ const AcademicPlansPage = () => {
   const calculateStats = (slots1, slots3) => {
     // Check for conflicts (same time, same day across semesters)
     const conflicts = [];
-    slots1.forEach(s1 => {
-      slots3.forEach(s3 => {
+    slots1.forEach((s1) => {
+      slots3.forEach((s3) => {
         if (s1.dayOfWeek === s3.dayOfWeek && s1.startTime === s3.startTime) {
           conflicts.push({
             day: s1.dayOfWeek,
             time: s1.startTime,
             sem1: s1.Course?.code,
-            sem3: s3.Course?.code
+            sem3: s3.Course?.code,
           });
         }
       });
     });
 
     if (conflicts.length === 0) {
-      setConflictStatus("No scheduling conflicts detected between Semester 1 and Semester 3 modules for the current faculty resources.");
+      setConflictStatus(
+        "No scheduling conflicts detected between Semester 1 and Semester 3 modules for the current faculty resources.",
+      );
     } else {
-      setConflictStatus(`${conflicts.length} scheduling conflict(s) detected. Please review overlapping time slots.`);
+      setConflictStatus(
+        `${conflicts.length} scheduling conflict(s) detected. Please review overlapping time slots.`,
+      );
     }
 
     // Calculate resource usage
     const allSlots = [...slots1, ...slots3];
     const lectureHalls = new Set();
     const labs = new Set();
-    allSlots.forEach(slot => {
+    allSlots.forEach((slot) => {
       const hallName = slot.LectureHall?.name || "";
       if (hallName.toLowerCase().includes("hall")) {
         lectureHalls.add(hallName);
@@ -97,13 +138,18 @@ const AcademicPlansPage = () => {
       }
     });
 
-    const lectureHallCapacity = lectureHalls.size > 0 ? Math.round((lectureHalls.size / 10) * 100) : 0;
+    const lectureHallCapacity =
+      lectureHalls.size > 0 ? Math.round((lectureHalls.size / 10) * 100) : 0;
     const labCapacity = labs.size > 0 ? Math.round((labs.size / 5) * 100) : 0;
 
-    setResourceUsage(`Lecture hall occupancy is at ${lectureHallCapacity}% capacity across both semesters. Computer labs are at ${labCapacity}% capacity.`);
+    setResourceUsage(
+      `Lecture hall occupancy is at ${lectureHallCapacity}% capacity across both semesters. Computer labs are at ${labCapacity}% capacity.`,
+    );
 
     // Planning note
-    setPlanningNote("Staff meetings for Module Leaders are scheduled for Wednesday afternoons; no core modules were booked in that slot.");
+    setPlanningNote(
+      "Staff meetings for Module Leaders are scheduled for Wednesday afternoons; no core modules were booked in that slot.",
+    );
   };
 
   const getSlotForTimeAndDay = (slots, time, day) => {
@@ -137,17 +183,17 @@ const AcademicPlansPage = () => {
   const getSlotColor = (slot, userId) => {
     if (!slot) return "";
     const isSupportive = slot.SupportiveInstructors?.some(
-      instructor => instructor.id === userId
+      (instructor) => instructor.id === userId,
     );
     const isMainInstructor = slot.InstructorId === userId;
 
     if (isSupportive && !isMainInstructor) {
       return "bg-red-100 border-l-4 border-red-400 text-secondary";
     }
-    if(isMainInstructor) {
+    if (isMainInstructor) {
       return "bg-blue-100 border-l-4 border-blue-400 text-primary";
     }
-    if(!isSupportive && !isMainInstructor) {
+    if (!isSupportive && !isMainInstructor) {
       return "bg-gray-100 border-l-4 border-gray-300 text-gray-600";
     }
 
@@ -169,7 +215,9 @@ const AcademicPlansPage = () => {
       <div className="min-h-screen flex items-center justify-center bg-background-light dark:bg-background-dark">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-gray-600 dark:text-gray-400">Loading academic plans...</p>
+          <p className="text-gray-600 dark:text-gray-400">
+            Loading academic plans...
+          </p>
         </div>
       </div>
     );
@@ -195,7 +243,6 @@ const AcademicPlansPage = () => {
     <div className="bg-background-light dark:bg-background-dark text-[#0d121b] dark:text-white min-h-screen">
       {/* Header */}
       <header className="flex items-center justify-between whitespace-nowrap border-b border-solid border-[#cfd7e7] dark:border-gray-800 bg-white dark:bg-[#1a2131] px-10 py-3 z-50">
-        
         <div className="flex items-center gap-4 text-primary-blue">
           <div className="size-8">
             <svg
@@ -220,9 +267,12 @@ const AcademicPlansPage = () => {
           <div className="flex items-center justify-between mb-8">
             <div>
               <h1 className="text-2xl font-bold text-[#0d121b] dark:text-white">
-                Full Academic View ({semester1?.name || "Semester 1"} &amp; {semester3?.name || "Semester 3"})
+                Full Academic View ({semester1?.name || "Semester 1"} &amp;{" "}
+                {semester3?.name || "Semester 3"})
               </h1>
-              <p className="text-[#4c669a] text-sm">Faculty-wide planning overview &amp; conflict detection</p>
+              <p className="text-[#4c669a] text-sm">
+                Faculty-wide planning overview &amp; conflict detection
+              </p>
             </div>
             <div className="flex items-center gap-4">
               <div className="flex gap-4 px-4 py-2 bg-white dark:bg-[#1a2131] rounded-lg border border-[#e7ebf3] dark:border-gray-800 text-xs font-medium">
@@ -235,8 +285,13 @@ const AcademicPlansPage = () => {
                   <span>Supportive Modules</span>
                 </div>
               </div>
-              <a onClick={() => navigate("/account-settings")} className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-[#1a2131] text-[#0d121b] dark:text-white border border-[#e7ebf3] dark:border-gray-800 rounded-lg text-sm font-bold hover:bg-gray-50 transition-all cursor-pointer">
-                <span className="material-symbols-outlined text-sm">arrow_back</span>
+              <a
+                onClick={() => navigate("/account-settings")}
+                className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-[#1a2131] text-[#0d121b] dark:text-white border border-[#e7ebf3] dark:border-gray-800 rounded-lg text-sm font-bold hover:bg-gray-50 transition-all cursor-pointer"
+              >
+                <span className="material-symbols-outlined text-sm">
+                  arrow_back
+                </span>
                 Back to Profile
               </a>
             </div>
@@ -257,21 +312,31 @@ const AcademicPlansPage = () => {
               <div className="bg-white dark:bg-[#1a2131] rounded-xl shadow-sm border border-[#e7ebf3] dark:border-gray-800 overflow-hidden flex flex-col">
                 <div className="timetable-grid bg-gray-50 dark:bg-gray-800/50">
                   <div className="border-b border-r border-gray-100 dark:border-gray-800"></div>
-                  {days.map(day => (
-                    <div key={day} className="day-header">{day}</div>
+                  {days.map((day) => (
+                    <div key={day} className="day-header">
+                      {day}
+                    </div>
                   ))}
                 </div>
                 <div className="flex-1 overflow-y-auto timetable-grid max-h-[500px]">
-                  {timeSlots.map(time => (
+                  {timeSlots.map((time) => (
                     <>
-                      <div key={time} className="time-label">{time}</div>
-                      {days.map(day => {
-                        const slot = getSlotForTimeAndDay(semester1Slots, time, day);
+                      <div key={time} className="time-label">
+                        {time}
+                      </div>
+                      {days.map((day) => {
+                        const slot = getSlotForTimeAndDay(
+                          semester1Slots,
+                          time,
+                          day,
+                        );
                         const colorClass = getSlotColor(slot, userData.id);
                         return (
                           <div key={`${time}-${day}`} className="slot">
                             {slot && (
-                              <div className={`p-2 rounded text-[10px] h-full ${colorClass}`}>
+                              <div
+                                className={`p-2 rounded text-[10px] h-full ${colorClass}`}
+                              >
                                 <span className="font-bold block">
                                   {slot.Course?.code}: {slot.Course?.name}
                                 </span>
@@ -303,21 +368,31 @@ const AcademicPlansPage = () => {
               <div className="bg-white dark:bg-[#1a2131] rounded-xl shadow-sm border border-[#e7ebf3] dark:border-gray-800 overflow-hidden">
                 <div className="timetable-grid bg-gray-50 dark:bg-gray-800/50">
                   <div className="border-b border-r border-gray-100 dark:border-gray-800"></div>
-                  {days.map(day => (
-                    <div key={day} className="day-header">{day}</div>
+                  {days.map((day) => (
+                    <div key={day} className="day-header">
+                      {day}
+                    </div>
                   ))}
                 </div>
                 <div className="flex-1 overflow-y-auto timetable-grid max-h-[500px]">
-                  {timeSlots.map(time => (
+                  {timeSlots.map((time) => (
                     <>
-                      <div key={time} className="time-label">{time}</div>
-                      {days.map(day => {
-                        const slot = getSlotForTimeAndDay(semester3Slots, time, day);
+                      <div key={time} className="time-label">
+                        {time}
+                      </div>
+                      {days.map((day) => {
+                        const slot = getSlotForTimeAndDay(
+                          semester3Slots,
+                          time,
+                          day,
+                        );
                         const colorClass = getSlotColor(slot, userData.id);
                         return (
                           <div key={`${time}-${day}`} className="slot">
                             {slot && (
-                              <div className={`p-2 rounded text-[10px] h-full ${colorClass}`}>
+                              <div
+                                className={`p-2 rounded text-[10px] h-full ${colorClass}`}
+                              >
                                 <span className="font-bold block">
                                   {slot.Course?.code}: {slot.Course?.name}
                                 </span>
@@ -340,7 +415,9 @@ const AcademicPlansPage = () => {
             <div className="bg-white dark:bg-[#1a2131] p-5 rounded-xl border border-[#e7ebf3] dark:border-gray-800">
               <div className="flex items-center gap-3 mb-3">
                 <div className="p-2 bg-green-50 dark:bg-green-900/10 text-green-600 rounded-lg">
-                  <span className="material-symbols-outlined">check_circle</span>
+                  <span className="material-symbols-outlined">
+                    check_circle
+                  </span>
                 </div>
                 <h4 className="font-bold text-sm">Conflict Status</h4>
               </div>

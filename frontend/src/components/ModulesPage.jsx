@@ -38,34 +38,72 @@ const ModulesPage = () => {
   // Pagination, search & sorting
   const [currentPage, setCurrentPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState("");
-  const [sortBy, setSortBy] = useState("name"); 
-  const [sortOrder, setSortOrder] = useState("asc"); 
+  const [sortBy, setSortBy] = useState("name");
+  const [sortOrder, setSortOrder] = useState("asc");
   const itemsPerPage = 4;
+
+  // const loadData = async () => {
+  //   try {
+  //     setLoading(true);
+  //     // Build filter options based on URL parameters
+  //     const filterOptions = {};
+  //     if (semesterId && !isNaN(Number(semesterId))) {
+  //       filterOptions.semesterId = Number(semesterId);
+  //     } else if (yearId && !isNaN(Number(yearId))) {
+  //       filterOptions.yearId = Number(yearId);
+  //     }
+
+  //     const [coursesData, instructorsData, lectureHallsData, yearsData, semestersData] = await Promise.all([
+  //       api.getCourses(filterOptions),
+  //       api.getInstructors(),
+  //       api.getLectureHalls(),
+  //       api.getAcademicYears(),
+  //       yearId ? api.getSemestersByYear(Number(yearId)) : Promise.resolve([]),
+  //     ]);
+  //     setCourses(coursesData || []);
+  //     setInstructors(instructorsData || []);
+  //     setLectureHalls(lectureHallsData || []);
+  //     setAcademicYears(yearsData || []);
+  //     setSemesters(semestersData || []);
+  //   } catch (err) {
+  //     setError(err.message || "Failed to load data");
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
 
   const loadData = async () => {
     try {
       setLoading(true);
-      // Build filter options based on URL parameters
-      const filterOptions = {};
-      if (semesterId && !isNaN(Number(semesterId))) {
-        filterOptions.semesterId = Number(semesterId);
-      } else if (yearId && !isNaN(Number(yearId))) {
-        filterOptions.yearId = Number(yearId);
-      }
-      
-      const [coursesData, instructorsData, lectureHallsData, yearsData, semestersData] = await Promise.all([
-        api.getCourses(filterOptions), 
+
+      const [
+        coursesData,
+        instructorsData,
+        lectureHallsData,
+        yearsData,
+        semestersData,
+      ] = await Promise.all([
+        api.getCourses({
+          academicYearId: Number(yearId),
+          semesterId: Number(semesterId),
+        }),
         api.getInstructors(),
         api.getLectureHalls(),
         api.getAcademicYears(),
         yearId ? api.getSemestersByYear(Number(yearId)) : Promise.resolve([]),
       ]);
+
+      console.log("Year ID:", yearId);
+      console.log("Semester ID:", semesterId);
+      console.log("Courses:", coursesData);
+
       setCourses(coursesData || []);
       setInstructors(instructorsData || []);
       setLectureHalls(lectureHallsData || []);
       setAcademicYears(yearsData || []);
       setSemesters(semestersData || []);
     } catch (err) {
+      console.error(err);
       setError(err.message || "Failed to load data");
     } finally {
       setLoading(false);
@@ -92,7 +130,7 @@ const ModulesPage = () => {
   // Sort filtered courses
   const sortedCourses = [...filteredCourses].sort((a, b) => {
     let aVal, bVal;
-    
+
     switch (sortBy) {
       case "code":
         aVal = (a.code || "").toLowerCase();
@@ -107,11 +145,11 @@ const ModulesPage = () => {
         aVal = (a.name || "").toLowerCase();
         bVal = (b.name || "").toLowerCase();
     }
-    
+
     if (sortBy === "credit") {
       return sortOrder === "asc" ? aVal - bVal : bVal - aVal;
     }
-    
+
     if (aVal < bVal) return sortOrder === "asc" ? -1 : 1;
     if (aVal > bVal) return sortOrder === "asc" ? 1 : -1;
     return 0;
@@ -132,7 +170,10 @@ const ModulesPage = () => {
   const totalItems = sortedCourses.length;
   const totalPages = Math.ceil(totalItems / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
-  const currentItems = sortedCourses.slice(startIndex, startIndex + itemsPerPage);
+  const currentItems = sortedCourses.slice(
+    startIndex,
+    startIndex + itemsPerPage,
+  );
 
   const goToPage = (page) => {
     if (page >= 1 && page <= totalPages) setCurrentPage(page);
@@ -164,7 +205,7 @@ const ModulesPage = () => {
       `"${c.moduleCoordinator?.name || "Not assigned"}"`,
     ]);
 
-    const csv = [headers.join(","), ...rows.map(r => r.join(","))].join("\n");
+    const csv = [headers.join(","), ...rows.map((r) => r.join(","))].join("\n");
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
@@ -209,14 +250,18 @@ const ModulesPage = () => {
     // Determine yearId and semesterId from URL params or form
     const finalYearId = yearId || form.AcademicYearId;
     const finalSemesterId = semesterId || form.SemesterId;
-    
+
     const payload = {
       code: form.code,
       name: form.name,
       credit: Number(form.credit) || 0,
-      assignedInstructorId: form.assignedInstructorId ? Number(form.assignedInstructorId) : null,
+      assignedInstructorId: form.assignedInstructorId
+        ? Number(form.assignedInstructorId)
+        : null,
       moduleLeaderId: form.moduleLeaderId ? Number(form.moduleLeaderId) : null,
-      moduleCoordinatorId: form.moduleCoordinatorId ? Number(form.moduleCoordinatorId) : null,
+      moduleCoordinatorId: form.moduleCoordinatorId
+        ? Number(form.moduleCoordinatorId)
+        : null,
       // Include semester and year
       SemesterId: finalSemesterId ? Number(finalSemesterId) : null,
       AcademicYearId: finalYearId ? Number(finalYearId) : null,
@@ -252,8 +297,18 @@ const ModulesPage = () => {
     setForm(emptyCourse);
   };
 
-  if (loading) return <div className="min-h-screen flex items-center justify-center text-gray-500">Loading...</div>;
-  if (error) return <div className="min-h-screen flex items-center justify-center text-red-500">Error: {error}</div>;
+  if (loading)
+    return (
+      <div className="min-h-screen flex items-center justify-center text-gray-500">
+        Loading...
+      </div>
+    );
+  if (error)
+    return (
+      <div className="min-h-screen flex items-center justify-center text-red-500">
+        Error: {error}
+      </div>
+    );
 
   return (
     <div className="bg-background-light dark:bg-background-dark text-[#0d121b] dark:text-white min-h-screen flex flex-col font-['Lexend',sans-serif]">
@@ -261,7 +316,11 @@ const ModulesPage = () => {
       <header className="flex items-center justify-between whitespace-nowrap border-b border-solid border-[#cfd7e7] dark:border-gray-800 bg-white dark:bg-background-dark px-4 sm:px-6 py-3">
         <div className="flex items-center gap-4 text-primary-blue">
           <div className="size-8">
-            <svg fill="none" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+            <svg
+              fill="none"
+              viewBox="0 0 48 48"
+              xmlns="http://www.w3.org/2000/svg"
+            >
               <path
                 d="M24 45.8096C19.6865 45.8096 15.4698 44.5305 11.8832 42.134C8.29667 39.7376 5.50128 36.3314 3.85056 32.3462C2.19985 28.361 1.76794 23.9758 2.60947 19.7452C3.451 15.5145 5.52816 11.6284 8.57829 8.5783C11.6284 5.52817 15.5145 3.45101 19.7452 2.60948C23.9758 1.76795 28.361 2.19986 32.3462 3.85057C36.3314 5.50129 39.7376 8.29668 42.134 11.8833C44.5305 15.4698 45.8096 19.6865 45.8096 24L24 24L24 45.8096Z"
                 fill="currentColor"
@@ -309,7 +368,11 @@ const ModulesPage = () => {
                 </button>
                 <span className="text-gray-400">/</span>
                 <button
-                  onClick={() => navigate(`/timetable/${yearId}/${semesterId}`, { state: { yearLabel, semesterName } })}
+                  onClick={() =>
+                    navigate(`/timetable/${yearId}/${semesterId}`, {
+                      state: { yearLabel, semesterName },
+                    })
+                  }
                   className="text-blue-600 hover:underline"
                 >
                   {semesterName || "Semester"}
@@ -331,46 +394,66 @@ const ModulesPage = () => {
 
       <div className="flex flex-1 overflow-hidden">
         {/* Left Sidebar - Hidden on mobile unless toggled */}
-        <aside className={`${sidebarOpen ? 'block' : 'hidden'} lg:block w-64 bg-white dark:bg-gray-900 border-r border-[#e7ebf3] dark:border-gray-800 flex flex-col absolute lg:relative z-40 h-full`}>
+        <aside
+          className={`${sidebarOpen ? "block" : "hidden"} lg:block w-64 bg-white dark:bg-gray-900 border-r border-[#e7ebf3] dark:border-gray-800 flex flex-col absolute lg:relative z-40 h-full`}
+        >
           <div className="p-6 flex-1 flex flex-col gap-6">
             <div className="space-y-4">
-              <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider">Management</h3>
+              <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider">
+                Management
+              </h3>
               <nav className="space-y-1">
-                <button
-                  className="w-full flex items-center gap-3 px-3 py-2 rounded-lg bg-blue-600/10 text-blue-700 dark:text-blue-400 font-medium"
-                >
-                  <span className="material-symbols-outlined text-xl">book</span>
+                <button className="w-full flex items-center gap-3 px-3 py-2 rounded-lg bg-blue-600/10 text-blue-700 dark:text-blue-400 font-medium">
+                  <span className="material-symbols-outlined text-xl">
+                    book
+                  </span>
                   <span className="text-sm font-medium">Modules</span>
                 </button>
                 <button
-                  onClick={() => navigate(`/module-outlines/${yearId}/${semesterId}`, { state: { yearLabel, semesterName } })}
+                  onClick={() =>
+                    navigate(`/module-outlines/${yearId}/${semesterId}`, {
+                      state: { yearLabel, semesterName },
+                    })
+                  }
                   className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-600 dark:text-gray-400"
                 >
-                  <span className="material-symbols-outlined text-xl">description</span>
+                  <span className="material-symbols-outlined text-xl">
+                    description
+                  </span>
                   <span className="text-sm font-medium">Module Outline</span>
                 </button>
                 <button
                   onClick={() => {
                     if (yearId && semesterId) {
-                      navigate(`/instructors/${yearId}/${semesterId}`, { state: { yearLabel, semesterName } });
+                      navigate(`/instructors/${yearId}/${semesterId}`, {
+                        state: { yearLabel, semesterName },
+                      });
                     } else {
                       navigate("/");
                     }
                   }}
                   className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-600 dark:text-gray-400"
                 >
-                  <span className="material-symbols-outlined text-xl">groups</span>
+                  <span className="material-symbols-outlined text-xl">
+                    groups
+                  </span>
                   <span className="text-sm font-medium">Instructors</span>
                 </button>
               </nav>
             </div>
 
             <div className="mt-auto border-t border-gray-100 dark:border-gray-800 pt-6 space-y-4">
-              <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider">Quick Access</h3>
+              <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider">
+                Quick Access
+              </h3>
               <div className="grid grid-cols-1 gap-2">
                 {yearId && semesterId ? (
                   <button
-                    onClick={() => navigate(`/timetable/${yearId}/${semesterId}`, { state: { yearLabel, semesterName } })}
+                    onClick={() =>
+                      navigate(`/timetable/${yearId}/${semesterId}`, {
+                        state: { yearLabel, semesterName },
+                      })
+                    }
                     className="flex items-center gap-3 px-4 py-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-[#0d121b] dark:text-white rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 transition-all font-medium"
                   >
                     <span className="material-symbols-outlined">table</span>
@@ -395,8 +478,12 @@ const ModulesPage = () => {
           <div className="max-w-6xl mx-auto">
             <div className="flex justify-between items-center mb-8">
               <div>
-                <h1 className="text-3xl font-black tracking-tight">Module Management</h1>
-                <p className="text-gray-500 text-sm mt-1">Manage and assign university academic modules</p>
+                <h1 className="text-3xl font-black tracking-tight">
+                  Module Management
+                </h1>
+                <p className="text-gray-500 text-sm mt-1">
+                  Manage and assign university academic modules
+                </p>
               </div>
               <button
                 onClick={openCreateModal}
@@ -428,14 +515,18 @@ const ModulesPage = () => {
               </div>
               <div className="flex items-center gap-3 w-full sm:w-auto">
                 <button className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-lg transition-colors">
-                  <span className="material-symbols-outlined text-lg">filter_list</span>
+                  <span className="material-symbols-outlined text-lg">
+                    filter_list
+                  </span>
                   Filter
                 </button>
                 <button
                   onClick={exportToCSV}
                   className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-lg transition-colors"
                 >
-                  <span className="material-symbols-outlined text-lg">download</span>
+                  <span className="material-symbols-outlined text-lg">
+                    download
+                  </span>
                   Export CSV
                 </button>
               </div>
@@ -446,7 +537,7 @@ const ModulesPage = () => {
               <table className="w-full text-left border-collapse min-w-[900px]">
                 <thead>
                   <tr className="bg-gray-50 dark:bg-gray-800/50 border-b border-[#e7ebf3] dark:border-gray-800">
-                    <th 
+                    <th
                       onClick={() => handleSort("code")}
                       className="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-wider cursor-pointer hover:text-gray-600 select-none"
                     >
@@ -454,12 +545,14 @@ const ModulesPage = () => {
                         Module Code
                         {sortBy === "code" && (
                           <span className="material-symbols-outlined text-sm">
-                            {sortOrder === "asc" ? "arrow_upward" : "arrow_downward"}
+                            {sortOrder === "asc"
+                              ? "arrow_upward"
+                              : "arrow_downward"}
                           </span>
                         )}
                       </div>
                     </th>
-                    <th 
+                    <th
                       onClick={() => handleSort("name")}
                       className="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-wider cursor-pointer hover:text-gray-600 select-none"
                     >
@@ -467,12 +560,14 @@ const ModulesPage = () => {
                         Module Name
                         {sortBy === "name" && (
                           <span className="material-symbols-outlined text-sm">
-                            {sortOrder === "asc" ? "arrow_upward" : "arrow_downward"}
+                            {sortOrder === "asc"
+                              ? "arrow_upward"
+                              : "arrow_downward"}
                           </span>
                         )}
                       </div>
                     </th>
-                    <th 
+                    <th
                       onClick={() => handleSort("credit")}
                       className="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-wider cursor-pointer hover:text-gray-600 select-none"
                     >
@@ -480,21 +575,34 @@ const ModulesPage = () => {
                         Credits
                         {sortBy === "credit" && (
                           <span className="material-symbols-outlined text-sm">
-                            {sortOrder === "asc" ? "arrow_upward" : "arrow_downward"}
+                            {sortOrder === "asc"
+                              ? "arrow_upward"
+                              : "arrow_downward"}
                           </span>
                         )}
                       </div>
                     </th>
-                    <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-wider">Module Leader</th>
-                    <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-wider hidden xl:table-cell">Assigned Instructor</th>
-                    <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-wider hidden 2xl:table-cell">Module Coordinator</th>
-                    <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-wider text-right">Actions</th>
+                    <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-wider">
+                      Module Leader
+                    </th>
+                    <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-wider hidden xl:table-cell">
+                      Assigned Instructor
+                    </th>
+                    <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-wider hidden 2xl:table-cell">
+                      Module Coordinator
+                    </th>
+                    <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-wider text-right">
+                      Actions
+                    </th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
                   {currentItems.length === 0 ? (
                     <tr>
-                      <td colSpan={7} className="px-6 py-12 text-center text-gray-500">
+                      <td
+                        colSpan={7}
+                        className="px-6 py-12 text-center text-gray-500"
+                      >
                         No modules found
                       </td>
                     </tr>
@@ -505,48 +613,74 @@ const ModulesPage = () => {
                         className="hover:bg-gray-50/50 dark:hover:bg-gray-800/30 transition-colors cursor-pointer"
                         onClick={() => openEditModal(course)}
                       >
-                        <td className="px-6 py-4 font-mono text-sm text-primary text-blue-600 font-bold">{course.code}</td>
-                        <td className="px-6 py-4 text-sm font-semibold">{course.name}</td>
-                        <td className="px-6 py-4 text-sm">{Number(course.credit).toFixed(1)}</td>
+                        <td className="px-6 py-4 font-mono text-sm text-primary text-blue-600 font-bold">
+                          {course.code}
+                        </td>
+                        <td className="px-6 py-4 text-sm font-semibold">
+                          {course.name}
+                        </td>
+                        <td className="px-6 py-4 text-sm">
+                          {Number(course.credit).toFixed(1)}
+                        </td>
                         <td className="px-6 py-4">
                           <div className="flex items-center gap-2">
                             <div className="size-7 rounded-full bg-primary/10 text-primary flex items-center justify-center text-[10px] font-bold">
-                              {course.moduleLeader?.name?.slice(0, 2).toUpperCase() || "NA"}
+                              {course.moduleLeader?.name
+                                ?.slice(0, 2)
+                                .toUpperCase() || "NA"}
                             </div>
-                            <span className="text-sm font-medium">{course.moduleLeader?.name || "Not assigned"}</span>
+                            <span className="text-sm font-medium">
+                              {course.moduleLeader?.name || "Not assigned"}
+                            </span>
                           </div>
                         </td>
                         <td className="px-6 py-4 hidden xl:table-cell">
                           <div className="flex items-center gap-2">
                             <div className="size-7 rounded-full bg-primary/10 text-primary flex items-center justify-center text-[10px] font-bold">
-                              {course.assignedInstructor?.name?.slice(0, 2).toUpperCase() || "NA"}
+                              {course.assignedInstructor?.name
+                                ?.slice(0, 2)
+                                .toUpperCase() || "NA"}
                             </div>
-                            <span className="text-sm font-medium">{course.assignedInstructor?.name || "Not assigned"}</span>
+                            <span className="text-sm font-medium">
+                              {course.assignedInstructor?.name ||
+                                "Not assigned"}
+                            </span>
                           </div>
                         </td>
                         <td className="px-6 py-4 hidden 2xl:table-cell">
                           <div className="flex items-center gap-2">
                             <div className="size-7 rounded-full bg-primary/10 text-primary flex items-center justify-center text-[10px] font-bold">
-                              {course.moduleCoordinator?.name?.slice(0, 2).toUpperCase() || "NA"}
+                              {course.moduleCoordinator?.name
+                                ?.slice(0, 2)
+                                .toUpperCase() || "NA"}
                             </div>
-                            <span className="text-sm font-medium">{course.moduleCoordinator?.name || "Not assigned"}</span>
+                            <span className="text-sm font-medium">
+                              {course.moduleCoordinator?.name || "Not assigned"}
+                            </span>
                           </div>
                         </td>
-                        <td className="px-6 py-4 text-right" onClick={(e) => e.stopPropagation()}>
+                        <td
+                          className="px-6 py-4 text-right"
+                          onClick={(e) => e.stopPropagation()}
+                        >
                           <div className="flex items-center justify-end gap-2">
                             <button
                               onClick={() => openEditModal(course)}
                               className="p-2 text-green-300 hover:text-primary hover:text-green-500 hover:bg-primary/5 rounded-lg transition-all"
                               title="Edit"
                             >
-                              <span className="material-symbols-outlined text-xl">edit</span>
+                              <span className="material-symbols-outlined text-xl">
+                                edit
+                              </span>
                             </button>
                             <button
                               onClick={() => handleDelete(course)}
                               className="p-2 text-red-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"
                               title="Delete"
                             >
-                              <span className="material-symbols-outlined text-xl">delete</span>
+                              <span className="material-symbols-outlined text-xl">
+                                delete
+                              </span>
                             </button>
                           </div>
                         </td>
@@ -559,7 +693,9 @@ const ModulesPage = () => {
               {/* Pagination footer */}
               <div className="px-6 py-4 bg-gray-50 dark:bg-gray-800/30 border-t border-[#e7ebf3] dark:border-gray-800 flex flex-col sm:flex-row items-center justify-between text-xs text-gray-500 gap-4">
                 <span>
-                  Showing {startIndex + 1}–{Math.min(startIndex + itemsPerPage, totalItems)} of {totalItems} modules
+                  Showing {startIndex + 1}–
+                  {Math.min(startIndex + itemsPerPage, totalItems)} of{" "}
+                  {totalItems} modules
                 </span>
 
                 <div className="flex items-center gap-1">
@@ -568,29 +704,35 @@ const ModulesPage = () => {
                     onClick={() => goToPage(currentPage - 1)}
                     className="p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-700 disabled:opacity-40 transition-colors"
                   >
-                    <span className="material-symbols-outlined">chevron_left</span>
+                    <span className="material-symbols-outlined">
+                      chevron_left
+                    </span>
                   </button>
 
-                  {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-                    <button
-                      key={page}
-                      onClick={() => goToPage(page)}
-                      className={`size-8 rounded font-medium ${
-                        currentPage === page
-                          ? "bg-primary text-white"
-                          : "hover:bg-gray-200 dark:hover:bg-gray-700"
-                      }`}
-                    >
-                      {page}
-                    </button>
-                  ))}
+                  {Array.from({ length: totalPages }, (_, i) => i + 1).map(
+                    (page) => (
+                      <button
+                        key={page}
+                        onClick={() => goToPage(page)}
+                        className={`size-8 rounded font-medium ${
+                          currentPage === page
+                            ? "bg-primary text-white"
+                            : "hover:bg-gray-200 dark:hover:bg-gray-700"
+                        }`}
+                      >
+                        {page}
+                      </button>
+                    ),
+                  )}
 
                   <button
                     disabled={currentPage === totalPages || totalPages === 0}
                     onClick={() => goToPage(currentPage + 1)}
                     className="p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-700 disabled:opacity-40 transition-colors"
                   >
-                    <span className="material-symbols-outlined">chevron_right</span>
+                    <span className="material-symbols-outlined">
+                      chevron_right
+                    </span>
                   </button>
                 </div>
               </div>
@@ -604,41 +746,70 @@ const ModulesPage = () => {
             <div className="p-6">
               <div className="flex justify-between items-center mb-6">
                 <h2 className="text-lg font-bold">Module Overview</h2>
-                <button onClick={() => setSelected(null)} className="text-gray-400 hover:text-gray-600">
+                <button
+                  onClick={() => setSelected(null)}
+                  className="text-gray-400 hover:text-gray-600"
+                >
                   <span className="material-symbols-outlined">close</span>
                 </button>
               </div>
               <div className="space-y-6">
                 <div className="p-4 bg-green-100 rounded-xl border border-primary/10">
-                  <span className="text-[10px] font-black text-primary uppercase tracking-widest">Selected Module</span>
+                  <span className="text-[10px] font-black text-primary uppercase tracking-widest">
+                    Selected Module
+                  </span>
                   <h3 className="text-xl font-bold mt-1">{selected.name}</h3>
                   <div className="mt-4 space-y-3 text-sm">
                     <div className="flex items-center gap-3">
-                      <span className="material-symbols-outlined text-gray-400">person</span>
+                      <span className="material-symbols-outlined text-gray-400">
+                        person
+                      </span>
                       <div>
-                        <span className="text-gray-400 text-[11px]">Assigned Module Leader</span>
-                        <p className="font-semibold">{selected.moduleLeader?.name || "—"}</p>
+                        <span className="text-gray-400 text-[11px]">
+                          Assigned Module Leader
+                        </span>
+                        <p className="font-semibold">
+                          {selected.moduleLeader?.name || "—"}
+                        </p>
                       </div>
                     </div>
                     <div className="flex items-center gap-3">
-                      <span className="material-symbols-outlined text-gray-400">person</span>
+                      <span className="material-symbols-outlined text-gray-400">
+                        person
+                      </span>
                       <div>
-                        <span className="text-gray-400 text-[11px]">Assigned Instructor</span>
-                        <p className="font-semibold">{selected.assignedInstructor?.name || "—"}</p>
+                        <span className="text-gray-400 text-[11px]">
+                          Assigned Instructor
+                        </span>
+                        <p className="font-semibold">
+                          {selected.assignedInstructor?.name || "—"}
+                        </p>
                       </div>
                     </div>
                     <div className="flex items-center gap-3">
-                      <span className="material-symbols-outlined text-gray-400">person</span>
+                      <span className="material-symbols-outlined text-gray-400">
+                        person
+                      </span>
                       <div>
-                        <span className="text-gray-400 text-[11px]">Module Coordinator</span>
-                        <p className="font-semibold">{selected.moduleCoordinator?.name || "—"}</p>
+                        <span className="text-gray-400 text-[11px]">
+                          Module Coordinator
+                        </span>
+                        <p className="font-semibold">
+                          {selected.moduleCoordinator?.name || "—"}
+                        </p>
                       </div>
                     </div>
                     <div className="flex items-center gap-3">
-                      <span className="material-symbols-outlined text-gray-400">credit_card</span>
+                      <span className="material-symbols-outlined text-gray-400">
+                        credit_card
+                      </span>
                       <div>
-                        <span className="text-gray-400 text-[11px]">Credits</span>
-                        <p className="font-semibold">{Number(selected.credit).toFixed(1)}</p>
+                        <span className="text-gray-400 text-[11px]">
+                          Credits
+                        </span>
+                        <p className="font-semibold">
+                          {Number(selected.credit).toFixed(1)}
+                        </p>
                       </div>
                     </div>
                   </div>
@@ -670,8 +841,13 @@ const ModulesPage = () => {
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm">
           <div className="bg-white dark:bg-gray-900 w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200">
             <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-gray-800">
-              <h2 className="text-xl font-bold">{selected ? "Edit Module" : "Add New Module"}</h2>
-              <button onClick={closeModal} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors">
+              <h2 className="text-xl font-bold">
+                {selected ? "Edit Module" : "Add New Module"}
+              </h2>
+              <button
+                onClick={closeModal}
+                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
+              >
                 <span className="material-symbols-outlined">close</span>
               </button>
             </div>
@@ -681,7 +857,9 @@ const ModulesPage = () => {
               {!yearId && (
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Academic Year</label>
+                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">
+                      Academic Year
+                    </label>
                     <div className="relative">
                       <select
                         name="AcademicYearId"
@@ -703,7 +881,9 @@ const ModulesPage = () => {
                     </div>
                   </div>
                   <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Semester</label>
+                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">
+                      Semester
+                    </label>
                     <div className="relative">
                       <select
                         name="SemesterId"
@@ -729,7 +909,9 @@ const ModulesPage = () => {
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Module Code</label>
+                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">
+                    Module Code
+                  </label>
                   <input
                     name="code"
                     value={form.code}
@@ -740,7 +922,9 @@ const ModulesPage = () => {
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Credits</label>
+                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">
+                    Credits
+                  </label>
                   <input
                     name="credit"
                     type="number"
@@ -755,7 +939,9 @@ const ModulesPage = () => {
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Module Name</label>
+                <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">
+                  Module Name
+                </label>
                 <input
                   name="name"
                   value={form.name}
@@ -767,9 +953,13 @@ const ModulesPage = () => {
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Assigned Instructor</label>
+                <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">
+                  Assigned Instructor
+                </label>
                 <div className="relative">
-                  <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-lg">search</span>
+                  <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-lg">
+                    search
+                  </span>
                   <select
                     name="assignedInstructorId"
                     value={form.assignedInstructorId}
@@ -790,9 +980,13 @@ const ModulesPage = () => {
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Module Leader</label>
+                <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">
+                  Module Leader
+                </label>
                 <div className="relative">
-                  <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-lg">search</span>
+                  <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-lg">
+                    search
+                  </span>
                   <select
                     name="moduleLeaderId"
                     value={form.moduleLeaderId}
@@ -813,9 +1007,13 @@ const ModulesPage = () => {
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Module Coordinator</label>
+                <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">
+                  Module Coordinator
+                </label>
                 <div className="relative">
-                  <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-lg">search</span>
+                  <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-lg">
+                    search
+                  </span>
                   <select
                     name="moduleCoordinatorId"
                     value={form.moduleCoordinatorId}

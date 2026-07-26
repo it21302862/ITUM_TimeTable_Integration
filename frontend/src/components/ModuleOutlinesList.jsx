@@ -22,7 +22,11 @@ const ModuleOutlinesList = () => {
   const loadCourses = async () => {
     try {
       setLoading(true);
-      const data = await api.getCourses({ semesterId: Number(semesterId) });
+      const data = await api.getCourses({
+        academicYearId: Number(yearId),
+        semesterId: Number(semesterId),
+      });
+
       setCourses(data || []);
     } catch (err) {
       setError(err.message || "Failed to load courses");
@@ -41,7 +45,11 @@ const ModuleOutlinesList = () => {
   });
 
   if (loading) {
-    return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        Loading...
+      </div>
+    );
   }
 
   return (
@@ -50,13 +58,21 @@ const ModuleOutlinesList = () => {
       <div className="bg-white dark:bg-slate-800 shadow-sm border-b border-slate-200 dark:border-slate-700">
         <div className="max-w-7xl mx-auto px-6 py-6">
           <button
-            onClick={() => navigate(`/modules/${yearId}/${semesterId}`, { state: { yearLabel, semesterName } })}
+            onClick={() =>
+              navigate(`/modules/${yearId}/${semesterId}`, {
+                state: { yearLabel, semesterName },
+              })
+            }
             className="text-blue-600 hover:text-blue-800 dark:text-blue-400 mb-4 flex items-center gap-2 text-sm font-medium"
           >
             ← Back to Modules
           </button>
-          <h1 className="text-3xl font-bold text-slate-900 dark:text-white">Module Outlines</h1>
-          <p className="text-slate-600 dark:text-slate-400 mt-1">{yearLabel} - {semesterName}</p>
+          <h1 className="text-3xl font-bold text-slate-900 dark:text-white">
+            Module Outlines
+          </h1>
+          <p className="text-slate-600 dark:text-slate-400 mt-1">
+            {yearLabel} - {semesterName}
+          </p>
         </div>
       </div>
 
@@ -81,14 +97,29 @@ const ModuleOutlinesList = () => {
         {/* Courses Grid */}
         {filteredCourses.length === 0 ? (
           <div className="text-center py-12">
-            <p className="text-slate-600 dark:text-slate-400">No modules found</p>
+            <p className="text-slate-600 dark:text-slate-400">
+              No modules found
+            </p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredCourses.map((course) => (
               <div
                 key={course.id}
-                onClick={() => navigate(`/module-outline/${yearId}/${semesterId}/${course.id}`, { state: { course, yearId, semesterId, yearLabel, semesterName } })}
+                onClick={() =>
+                  navigate(
+                    `/module-outline/${yearId}/${semesterId}/${course.id}`,
+                    {
+                      state: {
+                        course,
+                        yearId,
+                        semesterId,
+                        yearLabel,
+                        semesterName,
+                      },
+                    },
+                  )
+                }
                 className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-6 hover:shadow-lg hover:border-blue-300 dark:hover:border-blue-600 transition-all cursor-pointer group"
               >
                 <div className="space-y-4">
@@ -96,11 +127,15 @@ const ModuleOutlinesList = () => {
                     <h3 className="text-lg font-bold text-slate-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
                       {course.code}
                     </h3>
-                    <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">{course.name}</p>
+                    <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">
+                      {course.name}
+                    </p>
                   </div>
 
                   <div className="flex items-center justify-between text-sm">
-                    <span className="text-slate-500">Credits: {Number(course.credit).toFixed(1)}</span>
+                    <span className="text-slate-500">
+                      Credits: {Number(course.credit).toFixed(1)}
+                    </span>
                     <span className="text-blue-600 dark:text-blue-400 font-medium group-hover:translate-x-1 transition-transform">
                       View →
                     </span>
@@ -108,7 +143,9 @@ const ModuleOutlinesList = () => {
 
                   {course.moduleLeader && (
                     <div className="pt-4 border-t border-slate-100 dark:border-slate-700">
-                      <p className="text-xs text-slate-500 uppercase tracking-wider mb-2">Module Leader</p>
+                      <p className="text-xs text-slate-500 uppercase tracking-wider mb-2">
+                        Module Leader
+                      </p>
                       <p className="text-sm font-medium text-slate-900 dark:text-white">
                         {course.moduleLeader.name}
                       </p>

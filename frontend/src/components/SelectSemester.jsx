@@ -67,6 +67,8 @@ const SelectSemester = () => {
     // Backend originally had CURRENT/UPCOMING/DRAFT; user also uses PAST sometimes
     switch (status) {
       case "CURRENT":
+      case "PRESENT":
+      case "ACTIVE":
         return {
           icon: "radio_button_checked",
           text: "Current Semester",
@@ -103,7 +105,8 @@ const SelectSemester = () => {
   };
 
   const getAccentBorderClass = (status) => {
-    if (status === "CURRENT") return "border-2 border-primary-blue";
+    const activeStatuses = ["CURRENT", "PRESENT", "ACTIVE"];
+    if (activeStatuses.includes(status)) return "border-2 border-primary-blue";
     return "border border-transparent hover:border-primary-blue/50";
   };
 

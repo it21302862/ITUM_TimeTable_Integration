@@ -29,65 +29,86 @@ const AvailableInstructorsPage = () => {
     return `${year}-${month}-${day}T${hours}:${minutes}`;
   });
   const [showOnlyAvailable, setShowOnlyAvailable] = useState(false);
-  const [sessionData, setSessionData] = useState({
-    day: "",
-    startTime: "",
-    endTime: "",
-    lectureHall: "",
-    sessionType: "",
-    module: "",
-  });
   const [sendingNote, setSendingNote] = useState(false);
   const [sendError, setSendError] = useState(null);
   const [sendSuccess, setSendSuccess] = useState(false);
+  const [assignableData, setAssignableData] = useState(null);
+  const [selectedSession, setSelectedSession] = useState(null);
+  const [loadingSessions, setLoadingSessions] = useState(false);
+  const [sessionsError, setSessionsError] = useState(null);
 
-  const handleSessionChange = (field, value) => {
-    setSessionData((prev) => ({ ...prev, [field]: value }));
+  const DAY_LABEL = {
+    MONDAY: "Monday",
+    TUESDAY: "Tuesday",
+    WEDNESDAY: "Wednesday",
+    THURSDAY: "Thursday",
+    FRIDAY: "Friday",
+  };
+
+  const formatSlotTime = (time) => {
+    if (!time) return "";
+    return String(time).slice(0, 5);
+  };
+
+  const buildSessionDetails = (session) => ({
+    timetableSlotId: session.id,
+    day: DAY_LABEL[session.dayOfWeek] || session.dayOfWeek,
+    module: session.Course?.name || session.Course?.code || "",
+    startTime: formatSlotTime(session.startTime),
+    endTime: formatSlotTime(session.endTime),
+    lectureHall: session.LectureHall?.name || "",
+    sessionType: session.sessionType,
+    semesterId: session.SemesterId,
+    semesterName: session.Semester?.name || "",
+    yearId: yearId ? Number(yearId) : null,
+  });
+
+  const loadAssignableSessions = async (instructorId) => {
+    try {
+      setLoadingSessions(true);
+      setSessionsError(null);
+      const data = await api.getAssignableSessions(instructorId, {
+        yearId: yearId || undefined,
+      });
+      setAssignableData(data);
+      setSelectedSession(data.sessions?.[0] || null);
+    } catch (err) {
+      setSessionsError(err.message);
+      setAssignableData(null);
+      setSelectedSession(null);
+    } finally {
+      setLoadingSessions(false);
+    }
+  };
+
+  const openAssignModal = (instructor) => {
+    setSelectedInstructor(instructor);
+    setNote("Please proceed to assigned location for support.");
+    setSendError(null);
+    setShowModal(true);
+    loadAssignableSessions(instructor.id);
   };
 
   const handleSendNote = async () => {
-    if (!selectedInstructor || !note.trim()) return;
-
-    if (!sessionData.day || !sessionData.startTime || !sessionData.endTime || !sessionData.sessionType) {
-      setSendError("Please fill in day, start time, end time, and session type before sending.");
-      return;
-    }
-
-    if (!semesterId) {
-      setSendError("Semester context is required. Open Available Instructors from a semester timetable.");
-      return;
-    }
+    if (!selectedInstructor || !note.trim() || !selectedSession) return;
 
     try {
       setSendingNote(true);
       setSendError(null);
 
+      const sessionDetails = buildSessionDetails(selectedSession);
+
       await api.sendAssignmentNote({
         recipientId: selectedInstructor.id,
         message: note.trim(),
-        sessionDetails: {
-          day: sessionData.day,
-          module: sessionData.module,
-          startTime: sessionData.startTime,
-          endTime: sessionData.endTime,
-          lectureHall: sessionData.lectureHall,
-          sessionType: sessionData.sessionType,
-          semesterId: semesterId ? Number(semesterId) : null,
-          yearId: yearId ? Number(yearId) : null,
-        },
+        sessionDetails,
       });
 
       setSendSuccess(true);
       setShowModal(false);
       setNote("");
-      setSessionData({
-        day: "",
-        startTime: "",
-        endTime: "",
-        lectureHall: "",
-        sessionType: "",
-        module: "",
-      });
+      setSelectedSession(null);
+      setAssignableData(null);
       setTimeout(() => setSendSuccess(false), 3000);
     } catch (err) {
       setSendError(err.message);
@@ -154,6 +175,17 @@ const AvailableInstructorsPage = () => {
     ];
     if (!name) return colors[0];
     return colors[name.charCodeAt(0) % colors.length];
+  };
+
+  const getRoleLabel = (role) => {
+    switch (role) {
+      case "MODULE_LEADER":
+        return "Lecturer";
+      case "SUPPORTIVE_INSTRUCTOR":
+        return "Instructor";
+      default:
+        return null;
+    }
   };
 
   // Filter instructors
@@ -437,6 +469,11 @@ const AvailableInstructorsPage = () => {
                               <div className="flex items-center gap-3">
                                 <h3 className="text-xl font-black text-[#0d121b] dark:text-white">
                                   {instructor.name}
+                                  {getRoleLabel(instructor.role) ? (
+                                    <span className="text-sm font-medium text-slate-500 dark:text-slate-400 ml-2">
+                                      ({getRoleLabel(instructor.role)})
+                                    </span>
+                                  ) : null}
                                 </h3>
                                 <span
                                   className={`px-2.5 py-1 text-[10px] font-black uppercase rounded-lg ${
@@ -467,15 +504,8 @@ const AvailableInstructorsPage = () => {
                                   {instructor.availabilityStatus}
                                 </span>
                               </div>
-                              {isFree && (
-                                <button
-                                  onClick={() => {
-                                    setSelectedInstructor(instructor);
-                                    setNote(
-                                      `Please proceed to assigned location for support.`,
-                                    );
-                                    setShowModal(true);
-                                  }}
+                              <button
+                                  onClick={() => openAssignModal(instructor)}
                                   className="bg-blue-500 text-white px-6 py-2.5 rounded-xl font-bold text-sm shadow-lg shadow-primary/20 hover:bg-primary/90 transition-all flex items-center gap-2"
                                 >
                                   <span className="material-symbols-outlined text-lg">
@@ -483,7 +513,6 @@ const AvailableInstructorsPage = () => {
                                   </span>
                                   Quick Assign
                                 </button>
-                              )}
                             </div>
                           </div>
 
@@ -609,7 +638,7 @@ const AvailableInstructorsPage = () => {
                 <div className="grid grid-cols-1 gap-3">
                   <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-xl border border-gray-100 dark:border-gray-700 flex justify-between items-center">
                     <span className="text-xs font-bold text-gray-600 dark:text-gray-400 uppercase">
-                      CS Department
+                      IT Division
                     </span>
                     <span className="text-lg font-black">
                       85%{" "}
@@ -647,10 +676,18 @@ const AvailableInstructorsPage = () => {
               <div>
                 <div className="flex items-center gap-2 text-emerald-600 mb-1">
                   <span className="material-symbols-outlined text-lg">
-                    check_circle
+                    {loadingSessions
+                      ? "hourglass_top"
+                      : sessionsError
+                        ? "error"
+                        : "check_circle"}
                   </span>
                   <span className="text-[10px] font-black uppercase tracking-widest">
-                    Semester Check Successful
+                    {loadingSessions
+                      ? "Checking Availability"
+                      : sessionsError
+                        ? "Check Failed"
+                        : "Semester Check Successful"}
                   </span>
                 </div>
                 <h2 className="text-2xl font-black">
@@ -658,7 +695,12 @@ const AvailableInstructorsPage = () => {
                 </h2>
               </div>
               <button
-                onClick={() => setShowModal(false)}
+                onClick={() => {
+                  setShowModal(false);
+                  setSendError(null);
+                  setSelectedSession(null);
+                  setAssignableData(null);
+                }}
                 className="text-gray-400 hover:text-gray-600"
               >
                 <span className="material-symbols-outlined text-2xl">
@@ -680,153 +722,210 @@ const AvailableInstructorsPage = () => {
                   </span>
                 </div>
 
-                <div className="grid grid-cols-3 gap-3">
-                  <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-2xl border">
-                    <span className="text-[10px] font-bold text-gray-500 uppercase block mb-2">
-                      Semester 1
-                    </span>
-                    <div className="flex items-center gap-2 text-emerald-600">
-                      <span className="material-symbols-outlined text-sm">
-                        event_available
-                      </span>
-                      <span className="text-xs font-black">No Conflicts</span>
-                    </div>
-                  </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                  {(assignableData?.semesterReview || []).map((sem) => {
+                    const isClear = sem.status === "NO_CONFLICT";
+                    const isAdvisory =
+                      sem.status === "ADVISORY" || sem.status === "NO_SLOTS";
+                    const isBlocked = sem.status === "BLOCKED";
 
-                  <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-2xl border">
-                    <span className="text-[10px] font-bold text-gray-500 uppercase block mb-2">
-                      Semester 2
-                    </span>
-                    <div className="flex items-center gap-2 text-emerald-600">
-                      <span className="material-symbols-outlined text-sm">
-                        event_available
-                      </span>
-                      <span className="text-xs font-black">No Conflicts</span>
+                    return (
+                      <div
+                        key={sem.semesterId}
+                        className={`p-4 rounded-2xl border ${
+                          isBlocked
+                            ? "bg-red-50 dark:bg-red-900/10 border-red-100 dark:border-red-900/30"
+                            : isAdvisory
+                              ? "bg-amber-50 dark:bg-amber-900/10 border-amber-100 dark:border-amber-900/30"
+                              : "bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700"
+                        }`}
+                      >
+                        <span
+                          className={`text-[10px] font-bold uppercase block mb-2 ${
+                            isBlocked
+                              ? "text-red-600"
+                              : isAdvisory
+                                ? "text-amber-600"
+                                : "text-gray-500"
+                          }`}
+                        >
+                          {sem.semesterName}
+                        </span>
+                        <div
+                          className={`flex items-center gap-2 ${
+                            isBlocked
+                              ? "text-red-600"
+                              : isAdvisory
+                                ? "text-amber-600"
+                                : "text-emerald-600"
+                          }`}
+                        >
+                          <span className="material-symbols-outlined text-sm">
+                            {isBlocked
+                              ? "block"
+                              : isAdvisory
+                                ? "info"
+                                : "event_available"}
+                          </span>
+                          <span className="text-xs font-black">{sem.label}</span>
+                        </div>
+                        {sem.assignableCount > 0 && (
+                          <p className="text-[10px] text-gray-500 mt-2 font-medium">
+                            {sem.assignableCount} assignable session
+                            {sem.assignableCount !== 1 ? "s" : ""}
+                          </p>
+                        )}
+                      </div>
+                    );
+                  })}
+                  {loadingSessions && (
+                    <div className="col-span-full text-sm text-gray-500 py-4">
+                      Checking availability across active semesters...
                     </div>
-                  </div>
-
-                  <div className="p-4 bg-amber-50 dark:bg-amber-900/10 rounded-2xl border border-amber-100">
-                    <span className="text-[10px] font-bold text-amber-600 uppercase block mb-2">
-                      Semester 4
-                    </span>
-                    <div className="flex items-center gap-2 text-amber-600">
-                      <span className="material-symbols-outlined text-sm">
-                        info
-                      </span>
-                      <span className="text-xs font-black">
-                        Advisory Session
-                      </span>
-                    </div>
-                  </div>
+                  )}
+                  {!loadingSessions &&
+                    (!assignableData?.semesterReview ||
+                      assignableData.semesterReview.length === 0) && (
+                      <div className="col-span-full text-sm text-gray-500 py-4">
+                        No active semesters found
+                        {yearId ? " for this academic year" : ""}. Semesters
+                        with status PRESENT, CURRENT, or any non-PAST/DRAFT
+                        status are treated as active.
+                      </div>
+                    )}
                 </div>
               </div>
 
-              <div className="mb-8">
-                <h3 className="text-xs font-black text-gray-400 uppercase tracking-widest mb-4">
-                  Session Details
-                </h3>
-                <div className="grid grid-cols-2 gap-4">
-                  {/* Day */}
-                  <div>
-                    <label className="text-[10px] font-bold text-gray-500 uppercase block mb-1">
-                      Day
-                    </label>
-                    <select
-                      value={sessionData.day}
-                      onChange={(e) =>
-                        handleSessionChange("day", e.target.value)
-                      }
-                      className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-800 border rounded-xl text-sm"
-                    >
-                      <option value="">Select Day</option>
-                      <option>Monday</option>
-                      <option>Tuesday</option>
-                      <option>Wednesday</option>
-                      <option>Thursday</option>
-                      <option>Friday</option>
-                    </select>
-                  </div>
-
-                  {/* Module */}
-                  <div>
-                    <label className="text-[10px] font-bold text-gray-500 uppercase block mb-1">
-                      Module
-                    </label>
-                    <input
-                      type="text"
-                      value={sessionData.module}
-                      onChange={(e) =>
-                        handleSessionChange("module", e.target.value)
-                      }
-                      placeholder="e.g. Network Security"
-                      className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-800 border rounded-xl text-sm"
-                    />
-                  </div>
-                  {/* Start Time */}
-                  <div>
-                    <label className="text-[10px] font-bold text-gray-500 uppercase block mb-1">
-                      Start Time
-                    </label>
-                    <input
-                      type="time"
-                      value={sessionData.startTime}
-                      onChange={(e) =>
-                        handleSessionChange("startTime", e.target.value)
-                      }
-                      className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-800 border rounded-xl text-sm"
-                    />
-                  </div>
-
-                  {/* End Time */}
-                  <div>
-                    <label className="text-[10px] font-bold text-gray-500 uppercase block mb-1">
-                      End Time
-                    </label>
-                    <input
-                      type="time"
-                      value={sessionData.endTime}
-                      onChange={(e) =>
-                        handleSessionChange("endTime", e.target.value)
-                      }
-                      className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-800 border rounded-xl text-sm"
-                    />
-                  </div>
-                  {/* Lecture Hall */}
-                  <div>
-                    <label className="text-[10px] font-bold text-gray-500 uppercase block mb-1">
-                      Lecture Hall
-                    </label>
-                    <input
-                      type="text"
-                      value={sessionData.lectureHall}
-                      onChange={(e) =>
-                        handleSessionChange("lectureHall", e.target.value)
-                      }
-                      placeholder="e.g. LH-02"
-                      className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-800 border rounded-xl text-sm"
-                    />
-                  </div>
-
-                  {/* Session Type */}
-                  <div>
-                    <label className="text-[10px] font-bold text-gray-500 uppercase block mb-1">
-                      Session Type
-                    </label>
-                    <select
-                      value={sessionData.sessionType}
-                      onChange={(e) =>
-                        handleSessionChange("sessionType", e.target.value)
-                      }
-                      className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-800 border rounded-xl text-sm"
-                    >
-                      <option value="">Select Type</option>
-                      <option>LECTURE</option>
-                      <option>PRACTICAL</option>
-                      <option>TUTORIAL</option>
-                      <option>EXAM</option>
-                    </select>
+              {assignableData?.instructorSessions?.length > 0 && (
+                <div className="mb-8">
+                  <h3 className="text-xs font-black text-gray-400 uppercase tracking-widest mb-4">
+                    Instructor&apos;s Current Sessions
+                  </h3>
+                  <div className="space-y-2 max-h-40 overflow-y-auto custom-scrollbar pr-1">
+                    {assignableData.instructorSessions.map((session) => (
+                      <div
+                        key={session.id}
+                        className="p-3 rounded-xl border border-amber-200 dark:border-amber-900/40 bg-amber-50/50 dark:bg-amber-900/10"
+                      >
+                        <p className="font-bold text-sm">
+                          {session.Course?.name ||
+                            session.Course?.code ||
+                            "Module"}
+                        </p>
+                        <p className="text-[11px] text-gray-500 mt-0.5">
+                          {DAY_LABEL[session.dayOfWeek] || session.dayOfWeek} ·{" "}
+                          {formatSlotTime(session.startTime)} –{" "}
+                          {formatSlotTime(session.endTime)}
+                        </p>
+                        <p className="text-[10px] text-amber-700 dark:text-amber-400 mt-1 font-medium">
+                          {session.Semester?.name || "Semester"} — conflicts
+                          hide overlapping slots below
+                        </p>
+                      </div>
+                    ))}
                   </div>
                 </div>
+              )}
+
+              <div className="mb-8">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-xs font-black text-gray-400 uppercase tracking-widest">
+                    Available Timetable Sessions
+                  </h3>
+                  {assignableData && (
+                    <span className="text-[10px] font-bold text-gray-500">
+                      {assignableData.sessions?.length || 0} available
+                      {assignableData.hiddenDueToConflict > 0 && (
+                        <span className="text-red-500 ml-1">
+                          ({assignableData.hiddenDueToConflict} hidden — instructor
+                          conflict)
+                        </span>
+                      )}
+                    </span>
+                  )}
+                </div>
+
+                {sessionsError && (
+                  <p className="text-red-500 text-sm mb-3">{sessionsError}</p>
+                )}
+
+                {loadingSessions ? (
+                  <div className="py-8 text-center text-gray-500 text-sm">
+                    Loading timetable sessions...
+                  </div>
+                ) : assignableData?.sessions?.length > 0 ? (
+                  <div className="space-y-2 max-h-64 overflow-y-auto custom-scrollbar pr-1">
+                    {assignableData.sessions.map((session) => {
+                      const isSelected = selectedSession?.id === session.id;
+                      return (
+                        <button
+                          key={session.id}
+                          type="button"
+                          onClick={() => setSelectedSession(session)}
+                          className={`w-full text-left p-4 rounded-2xl border transition-all ${
+                            isSelected
+                              ? "border-blue-500 bg-blue-50 dark:bg-blue-900/20 ring-2 ring-blue-500/30"
+                              : "border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 hover:border-blue-300"
+                          }`}
+                        >
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="flex-1 min-w-0">
+                              <p className="font-bold text-sm truncate">
+                                {session.Course?.name ||
+                                  session.Course?.code ||
+                                  "Module"}
+                              </p>
+                              <p className="text-[11px] text-gray-500 mt-0.5">
+                                {DAY_LABEL[session.dayOfWeek] || session.dayOfWeek}{" "}
+                                · {formatSlotTime(session.startTime)} –{" "}
+                                {formatSlotTime(session.endTime)}
+                              </p>
+                              <div className="flex flex-wrap gap-2 mt-2">
+                                <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded bg-white dark:bg-gray-900 border text-gray-600">
+                                  {session.sessionType}
+                                </span>
+                                <span className="text-[10px] font-medium px-2 py-0.5 rounded bg-white dark:bg-gray-900 border text-gray-500">
+                                  {session.LectureHall?.name || "Room TBD"}
+                                </span>
+                                <span className="text-[10px] font-medium px-2 py-0.5 rounded bg-white dark:bg-gray-900 border text-gray-500">
+                                  {session.Semester?.name || "Semester"}
+                                </span>
+                              </div>
+                              <p className="text-[10px] text-gray-400 mt-2">
+                                Lead: {session.Instructor?.name || "Unassigned"}
+                              </p>
+                            </div>
+                            <div
+                              className={`size-5 rounded-full border-2 shrink-0 mt-1 flex items-center justify-center ${
+                                isSelected
+                                  ? "border-blue-500 bg-blue-500"
+                                  : "border-gray-300 dark:border-gray-600"
+                              }`}
+                            >
+                              {isSelected && (
+                                <span className="material-symbols-outlined text-white text-[14px]">
+                                  check
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="py-8 text-center bg-gray-50 dark:bg-gray-800 rounded-2xl border border-dashed border-gray-300 dark:border-gray-600">
+                    <span className="material-symbols-outlined text-3xl text-gray-400 mb-2">
+                      event_busy
+                    </span>
+                    <p className="text-sm text-gray-500">
+                      No assignable sessions for this instructor.
+                    </p>
+                    <p className="text-xs text-gray-400 mt-1">
+                      Sessions where they already have a slot are hidden.
+                    </p>
+                  </div>
+                )}
               </div>
 
               {/* Assignment Note */}
@@ -869,6 +968,8 @@ const AvailableInstructorsPage = () => {
                 onClick={() => {
                   setShowModal(false);
                   setSendError(null);
+                  setSelectedSession(null);
+                  setAssignableData(null);
                 }}
                 className="px-6 py-2.5 rounded-xl font-bold text-sm text-gray-600 hover:bg-gray-100"
               >
@@ -876,7 +977,7 @@ const AvailableInstructorsPage = () => {
               </button>
               <button
                 onClick={handleSendNote}
-                disabled={sendingNote || !note.trim()}
+                disabled={sendingNote || !note.trim() || !selectedSession}
                 className="px-8 py-2.5 bg-blue-500 text-white rounded-xl font-bold text-sm shadow-lg hover:bg-primary/90 flex items-center gap-2 disabled:opacity-50"
               >
                 <span className="material-symbols-outlined text-lg">send</span>

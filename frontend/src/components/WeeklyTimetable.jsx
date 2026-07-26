@@ -26,14 +26,31 @@ const WeeklyTimetable = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   // Load all dropdown data
+  // const loadDropdownData = async () => {
+  //   try {
+  //     const [coursesData, instructorsData, lectureHallsData] =
+  //       await Promise.all([
+  //         api.getCoursesBySemester(yearId, semesterId), // Get all courses for dropdowns
+  //         api.getInstructors(),
+  //         api.getLectureHalls(),
+  //       ]);
+  //     setCourses(coursesData || []);
+  //     setInstructors(instructorsData || []);
+  //     setLectureHalls(lectureHallsData || []);
+  //   } catch (err) {
+  //     console.error("Error loading dropdown data:", err);
+  //   }
+  // };
+
   const loadDropdownData = async () => {
     try {
       const [coursesData, instructorsData, lectureHallsData] =
         await Promise.all([
-          api.getCourses(), // Get all courses for dropdowns
+          api.getCourses({ academicYearId: yearId, semesterId: semesterId }),
           api.getInstructors(),
           api.getLectureHalls(),
         ]);
+
       setCourses(coursesData || []);
       setInstructors(instructorsData || []);
       setLectureHalls(lectureHallsData || []);
@@ -57,8 +74,10 @@ const WeeklyTimetable = () => {
   };
 
   useEffect(() => {
-    loadDropdownData();
-  }, []);
+    if (yearId && semesterId) {
+      loadDropdownData();
+    }
+  }, [yearId, semesterId]);
 
   useEffect(() => {
     loadTimetable();
@@ -100,7 +119,10 @@ const WeeklyTimetable = () => {
     setSlotForm((prev) => {
       const ids = prev.SupportiveInstructorIds || [];
       if (ids.includes(instructorId)) {
-        return { ...prev, SupportiveInstructorIds: ids.filter(id => id !== instructorId) };
+        return {
+          ...prev,
+          SupportiveInstructorIds: ids.filter((id) => id !== instructorId),
+        };
       } else {
         return { ...prev, SupportiveInstructorIds: [...ids, instructorId] };
       }
@@ -133,7 +155,8 @@ const WeeklyTimetable = () => {
       sessionType: slot.sessionType || "LECTURE",
       CourseId: slot.CourseId || "",
       InstructorId: slot.InstructorId || "",
-      SupportiveInstructorIds: slot.SupportiveInstructors?.map(i => i.id) || [],
+      SupportiveInstructorIds:
+        slot.SupportiveInstructors?.map((i) => i.id) || [],
       LectureHallId: slot.LectureHallId || "",
     });
     setIsModalOpen(true);
@@ -148,7 +171,7 @@ const WeeklyTimetable = () => {
   // Create new slot
   const handleCreateSlot = async (e) => {
     e.preventDefault();
-    
+
     // Validation
     if (!slotForm.CourseId) {
       alert("Please select a course");
@@ -162,7 +185,7 @@ const WeeklyTimetable = () => {
       alert("Please select a lecture hall");
       return;
     }
-    
+
     setSaving(true);
     try {
       const payload = {
@@ -170,7 +193,9 @@ const WeeklyTimetable = () => {
         SemesterId: Number(semesterId),
         CourseId: Number(slotForm.CourseId),
         InstructorId: Number(slotForm.InstructorId),
-        SupportiveInstructorIds: slotForm.SupportiveInstructorIds.map(id => Number(id)),
+        SupportiveInstructorIds: slotForm.SupportiveInstructorIds.map((id) =>
+          Number(id),
+        ),
         LectureHallId: Number(slotForm.LectureHallId),
       };
       await api.createTimetableSlot(payload);
@@ -187,7 +212,7 @@ const WeeklyTimetable = () => {
   const handleUpdateSlot = async (e) => {
     e.preventDefault();
     if (!selectedSlot?.id) return;
-    
+
     // Validation
     if (!slotForm.CourseId) {
       alert("Please select a course");
@@ -201,7 +226,7 @@ const WeeklyTimetable = () => {
       alert("Please select a lecture hall");
       return;
     }
-    
+
     setSaving(true);
     try {
       const payload = {
@@ -209,7 +234,9 @@ const WeeklyTimetable = () => {
         SemesterId: Number(semesterId),
         CourseId: Number(slotForm.CourseId),
         InstructorId: Number(slotForm.InstructorId),
-        SupportiveInstructorIds: slotForm.SupportiveInstructorIds.map(id => Number(id)),
+        SupportiveInstructorIds: slotForm.SupportiveInstructorIds.map((id) =>
+          Number(id),
+        ),
         LectureHallId: Number(slotForm.LectureHallId),
       };
       await api.updateTimetableSlot(selectedSlot.id, payload);
@@ -430,7 +457,9 @@ const WeeklyTimetable = () => {
                 <span className="text-gray-400">/</span>
               </>
             )}
-            <span className="text-gray-600 dark:text-gray-400">{semesterName}</span>
+            <span className="text-gray-600 dark:text-gray-400">
+              {semesterName}
+            </span>
           </div>
           {/* Mobile sidebar toggle */}
           <button
@@ -444,7 +473,9 @@ const WeeklyTimetable = () => {
 
       <div className="flex flex-col lg:flex-row h-[calc(100vh-7rem)] overflow-hidden">
         {/* Sidebar - Hidden on mobile unless toggled */}
-        <aside className={`${sidebarOpen ? 'block' : 'hidden'} lg:block w-64 bg-white dark:bg-gray-900 border-r border-[#e7ebf3] dark:border-gray-800 flex flex-col absolute lg:relative z-40 h-full lg:h-auto`}>
+        <aside
+          className={`${sidebarOpen ? "block" : "hidden"} lg:block w-64 bg-white dark:bg-gray-900 border-r border-[#e7ebf3] dark:border-gray-800 flex flex-col absolute lg:relative z-40 h-full lg:h-auto`}
+        >
           <div className="p-6 flex-1 flex flex-col gap-6">
             <div>
               <h3 className="text-xs font-bold uppercase tracking-wide text-gray-500 mb-3">
@@ -492,7 +523,11 @@ const WeeklyTimetable = () => {
                 </button>
 
                 <button
-                  onClick={() => navigate(`/modules/${yearId}/${semesterId}`, { state: { yearLabel, semesterName, yearId, semesterId } })}
+                  onClick={() =>
+                    navigate(`/modules/${yearId}/${semesterId}`, {
+                      state: { yearLabel, semesterName, yearId, semesterId },
+                    })
+                  }
                   className="w-full flex items-center gap-3 px-4 py-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-[#0d121b] dark:text-white rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 transition-all font-medium"
                 >
                   <span className="material-symbols-outlined">book</span>
@@ -500,7 +535,11 @@ const WeeklyTimetable = () => {
                 </button>
 
                 <button
-                  onClick={() => navigate(`/instructors/${yearId}/${semesterId}`, { state: { yearLabel, semesterName, yearId, semesterId } })}
+                  onClick={() =>
+                    navigate(`/instructors/${yearId}/${semesterId}`, {
+                      state: { yearLabel, semesterName, yearId, semesterId },
+                    })
+                  }
                   className="w-full flex items-center gap-3 px-4 py-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-[#0d121b] dark:text-white rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 transition-all font-medium"
                 >
                   <span className="material-symbols-outlined">groups</span>
@@ -564,14 +603,27 @@ const WeeklyTimetable = () => {
                               : ""
                           }`}
                         >
-                          {slots.map((slot) => (
+                          {slots.map((slot) => {
+                            const hasAdditionalInstructor =
+                              slot.SupportiveInstructors?.length > 0;
+                            return (
                             <button
                               key={slot.id}
                               onClick={() => setSelectedSlot(slot)}
                               className={`w-full h-full text-left rounded p-2.5 ${getSessionTypeColor(
                                 slot.sessionType,
-                              )} hover:opacity-90 transition-opacity text-xs`}
+                              )} hover:opacity-90 transition-opacity text-xs relative`}
                             >
+                              {hasAdditionalInstructor && (
+                                <span
+                                  className="absolute top-1.5 right-1.5 size-5 rounded-full bg-red-500 text-white flex items-center justify-center shadow-sm"
+                                  title={`Additional instructor: ${slot.SupportiveInstructors.map((i) => i.name).join(", ")}`}
+                                >
+                                  <span className="material-symbols-outlined text-[12px]">
+                                    person_add
+                                  </span>
+                                </span>
+                              )}
                               <div className="font-bold uppercase text-[10px] opacity-90">
                                 {getSessionTypeLabel(slot.sessionType)}
                               </div>
@@ -587,8 +639,14 @@ const WeeklyTimetable = () => {
                                 {formatTime(slot.startTime)} –{" "}
                                 {formatTime(slot.endTime)}
                               </div>
+                              {hasAdditionalInstructor && (
+                                <div className="text-[9px] text-red-600 dark:text-red-400 font-bold mt-1 truncate">
+                                  + {slot.SupportiveInstructors.map((i) => i.name).join(", ")}
+                                </div>
+                              )}
                             </button>
-                          ))}
+                          );
+                          })}
                         </div>
                       );
                     })}
@@ -697,25 +755,32 @@ const WeeklyTimetable = () => {
                         </span>
                       </div>
                     </div>
-                    {selectedSlot.SupportiveInstructors && selectedSlot.SupportiveInstructors.length > 0 && (
-                      <div className="flex items-start gap-3">
-                        <span className="material-symbols-outlined text-gray-400 mt-0.5">
-                          groups
-                        </span>
-                        <div className="flex flex-col flex-1">
-                          <span className="text-gray-400 text-[11px]">
-                            Supportive Instructors ({selectedSlot.SupportiveInstructors.length})
+                    {selectedSlot.SupportiveInstructors &&
+                      selectedSlot.SupportiveInstructors.length > 0 && (
+                        <div className="flex items-start gap-3">
+                          <span className="material-symbols-outlined text-red-500 mt-0.5">
+                            person_add
                           </span>
-                          <div className="flex flex-wrap gap-2 mt-1">
-                            {selectedSlot.SupportiveInstructors.map((instructor) => (
-                              <span key={instructor.id} className="inline-block bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 text-xs font-medium px-2 py-1 rounded-md">
-                                {instructor.name}
-                              </span>
-                            ))}
+                          <div className="flex flex-col flex-1">
+                            <span className="text-red-600 dark:text-red-400 text-[11px] font-bold uppercase">
+                              Additional Instructor
+                            </span>
+                            <div className="flex flex-wrap gap-2 mt-1">
+                              {selectedSlot.SupportiveInstructors.map(
+                                (instructor) => (
+                                  <span
+                                    key={instructor.id}
+                                    className="inline-flex items-center gap-1 bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300 text-xs font-medium px-2 py-1 rounded-md"
+                                  >
+                                    <span className="size-1.5 rounded-full bg-red-500"></span>
+                                    {instructor.name}
+                                  </span>
+                                ),
+                              )}
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    )}
+                      )}
                   </div>
                 </div>
 
@@ -764,7 +829,9 @@ const WeeklyTimetable = () => {
                     {isEditing ? "Edit Time Slot" : "Create New Slot"}
                   </h2>
                   <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-0.5">
-                    {isEditing ? "Update slot details" : "Add a new timetable entry"}
+                    {isEditing
+                      ? "Update slot details"
+                      : "Add a new timetable entry"}
                   </p>
                 </div>
               </div>
@@ -777,11 +844,16 @@ const WeeklyTimetable = () => {
             </div>
 
             {/* Form Content */}
-            <form onSubmit={isEditing ? handleUpdateSlot : handleCreateSlot} className="p-6 sm:p-8 space-y-6">
+            <form
+              onSubmit={isEditing ? handleUpdateSlot : handleCreateSlot}
+              className="p-6 sm:p-8 space-y-6"
+            >
               {/* Course Selection */}
               <div>
                 <label className="flex items-center gap-2 text-sm font-bold text-gray-700 dark:text-gray-300 mb-3">
-                  <span className="material-symbols-outlined text-base text-blue-600">book</span>
+                  <span className="material-symbols-outlined text-base text-blue-600">
+                    book
+                  </span>
                   Module / Course
                 </label>
                 <select
@@ -806,7 +878,9 @@ const WeeklyTimetable = () => {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                 <div>
                   <label className="flex items-center gap-2 text-sm font-bold text-gray-700 dark:text-gray-300 mb-3">
-                    <span className="material-symbols-outlined text-base text-blue-600">category</span>
+                    <span className="material-symbols-outlined text-base text-blue-600">
+                      category
+                    </span>
                     Session Type
                   </label>
                   <select
@@ -824,7 +898,9 @@ const WeeklyTimetable = () => {
 
                 <div>
                   <label className="flex items-center gap-2 text-sm font-bold text-gray-700 dark:text-gray-300 mb-3">
-                    <span className="material-symbols-outlined text-base text-blue-600">location_on</span>
+                    <span className="material-symbols-outlined text-base text-blue-600">
+                      location_on
+                    </span>
                     Lecture Hall / Lab
                   </label>
                   <select
@@ -850,7 +926,9 @@ const WeeklyTimetable = () => {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                 <div>
                   <label className="flex items-center gap-2 text-sm font-bold text-gray-700 dark:text-gray-300 mb-3">
-                    <span className="material-symbols-outlined text-base text-blue-600">person</span>
+                    <span className="material-symbols-outlined text-base text-blue-600">
+                      person
+                    </span>
                     Main Instructor
                   </label>
                   <select
@@ -874,7 +952,9 @@ const WeeklyTimetable = () => {
                 {/* Schedule Timing */}
                 <div>
                   <label className="flex items-center gap-2 text-sm font-bold text-gray-700 dark:text-gray-300 mb-3">
-                    <span className="material-symbols-outlined text-base text-blue-600">schedule</span>
+                    <span className="material-symbols-outlined text-base text-blue-600">
+                      schedule
+                    </span>
                     Day of Week
                   </label>
                   <select
@@ -895,12 +975,16 @@ const WeeklyTimetable = () => {
               {/* Time Selection */}
               <div>
                 <label className="flex items-center gap-2 text-sm font-bold text-gray-700 dark:text-gray-300 mb-3">
-                  <span className="material-symbols-outlined text-base text-blue-600">access_time</span>
+                  <span className="material-symbols-outlined text-base text-blue-600">
+                    access_time
+                  </span>
                   Session Time
                 </label>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <div className="text-xs text-gray-500 dark:text-gray-400 mb-2 font-medium">Start Time</div>
+                    <div className="text-xs text-gray-500 dark:text-gray-400 mb-2 font-medium">
+                      Start Time
+                    </div>
                     <input
                       name="startTime"
                       type="time"
@@ -910,7 +994,9 @@ const WeeklyTimetable = () => {
                     />
                   </div>
                   <div>
-                    <div className="text-xs text-gray-500 dark:text-gray-400 mb-2 font-medium">End Time</div>
+                    <div className="text-xs text-gray-500 dark:text-gray-400 mb-2 font-medium">
+                      End Time
+                    </div>
                     <input
                       name="endTime"
                       type="time"
@@ -925,8 +1011,11 @@ const WeeklyTimetable = () => {
               {/* Supportive Instructors */}
               <div>
                 <label className="flex items-center gap-2 text-sm font-bold text-gray-700 dark:text-gray-300 mb-3">
-                  <span className="material-symbols-outlined text-base text-blue-600">group_add</span>
-                  Supportive Instructors <span className="text-gray-400 font-normal">(Optional)</span>
+                  <span className="material-symbols-outlined text-base text-blue-600">
+                    group_add
+                  </span>
+                  Supportive Instructors{" "}
+                  <span className="text-gray-400 font-normal">(Optional)</span>
                 </label>
                 <div className="border border-gray-300 dark:border-gray-600 rounded-lg overflow-hidden">
                   <div className="max-h-64 overflow-y-auto bg-gray-50 dark:bg-gray-800/50">
@@ -938,8 +1027,12 @@ const WeeklyTimetable = () => {
                         >
                           <input
                             type="checkbox"
-                            checked={slotForm.SupportiveInstructorIds.includes(instructor.id)}
-                            onChange={() => handleSupportiveInstructorChange(instructor.id)}
+                            checked={slotForm.SupportiveInstructorIds.includes(
+                              instructor.id,
+                            )}
+                            onChange={() =>
+                              handleSupportiveInstructorChange(instructor.id)
+                            }
                             className="rounded w-4 h-4 text-blue-600 focus:ring-blue-500 cursor-pointer"
                           />
                           <span className="text-sm font-medium text-gray-700 dark:text-gray-300 flex-1">
@@ -956,8 +1049,14 @@ const WeeklyTimetable = () => {
                 </div>
                 {slotForm.SupportiveInstructorIds.length > 0 && (
                   <div className="mt-3 flex items-center gap-2 text-xs font-medium text-blue-600 dark:text-blue-400">
-                    <span className="material-symbols-outlined text-sm">check_circle</span>
-                    {slotForm.SupportiveInstructorIds.length} instructor{slotForm.SupportiveInstructorIds.length !== 1 ? 's' : ''} selected
+                    <span className="material-symbols-outlined text-sm">
+                      check_circle
+                    </span>
+                    {slotForm.SupportiveInstructorIds.length} instructor
+                    {slotForm.SupportiveInstructorIds.length !== 1
+                      ? "s"
+                      : ""}{" "}
+                    selected
                   </div>
                 )}
               </div>
@@ -980,7 +1079,11 @@ const WeeklyTimetable = () => {
                   <span className="material-symbols-outlined text-base">
                     {saving ? "hourglass_empty" : isEditing ? "save" : "add"}
                   </span>
-                  {saving ? "Saving..." : isEditing ? "Update Slot" : "Create Slot"}
+                  {saving
+                    ? "Saving..."
+                    : isEditing
+                      ? "Update Slot"
+                      : "Create Slot"}
                 </button>
               </div>
             </form>

@@ -1,4 +1,20 @@
-const API_BASE_URL = "http://localhost:5000/api";
+import {
+  isActiveSemester,
+  buildAssignableSessionsData,
+} from "../utils/assignableSessions.js";
+
+const API_BASE_URL = "https://af-nasa-backend.onrender.com/api";
+
+const resolveImageUrl = (imageUrl) => {
+  if (typeof imageUrl !== "string") return imageUrl;
+  if (imageUrl.startsWith("http://") || imageUrl.startsWith("https://")) {
+    return imageUrl;
+  }
+  if (imageUrl.startsWith("/")) {
+    return API_BASE_URL.replace(/\/api\/?$/, "") + imageUrl;
+  }
+  return imageUrl;
+};
 
 export const api = {
   // Authentication
@@ -72,8 +88,8 @@ export const api = {
       throw new Error("Failed to fetch user profile");
     }
     const data = await response.json();
-    if (data?.imageUrl && typeof data.imageUrl === "string" && data.imageUrl.startsWith("/")) {
-      data.imageUrl = API_BASE_URL.replace("/api", "") + data.imageUrl;
+    if (data?.imageUrl) {
+      data.imageUrl = resolveImageUrl(data.imageUrl);
     }
     return data;
   },
@@ -91,8 +107,8 @@ export const api = {
       throw new Error("Failed to update user profile");
     }
     const data = await response.json();
-    if (data?.imageUrl && typeof data.imageUrl === "string" && data.imageUrl.startsWith("/")) {
-      data.imageUrl = API_BASE_URL.replace("/api", "") + data.imageUrl;
+    if (data?.imageUrl) {
+      data.imageUrl = resolveImageUrl(data.imageUrl);
     }
     return data;
   },
@@ -137,8 +153,11 @@ export const api = {
     return response.json();
   },
 
-  async getCurrentSemesters() {
-    const response = await fetch(`${API_BASE_URL}/semesters/current`);
+  async getCurrentSemesters(yearId) {
+    const params = new URLSearchParams();
+    if (yearId) params.append("yearId", yearId);
+    const query = params.toString() ? `?${params.toString()}` : "";
+    const response = await fetch(`${API_BASE_URL}/semesters/current${query}`);
     if (!response.ok) {
       throw new Error("Failed to fetch current semesters");
     }
@@ -170,6 +189,95 @@ export const api = {
     return response.json();
   },
 
+  async getAssignableSessions(instructorId, options = {}) {
+    const { yearId } = options;
+    const params = new URLSearchParams();
+    if (instructorId) params.append("instructorId", instructorId);
+    if (yearId) params.append("yearId", yearId);
+
+    try {
+      const response = await fetch(
+        `${API_BASE_URL}/timetable/assignable-sessions?${params.toString()}`,
+      );
+      if (response.ok) {
+        const data = await response.json();
+        if ((data.semesters?.length ?? 0) > 0) {
+          return data;
+        }
+      }
+    } catch {
+      // Fall back to client-side assembly using existing endpoints.
+    }
+
+    return this.buildAssignableSessionsClientSide(instructorId, yearId);
+  },
+
+  async buildAssignableSessionsClientSide(instructorId, yearId) {
+    let semesters = [];
+    if (yearId) {
+      semesters = await this.getSemestersByYear(yearId);
+    } else {
+      try {
+        semesters = await this.getCurrentSemesters();
+      } catch {
+        semesters = [];
+      }
+    }
+
+    const activeSemesters = semesters.filter(isActiveSemester);
+    if (activeSemesters.length === 0) {
+      return {
+        semesters: [],
+        sessions: [],
+        instructorSessions: [],
+        semesterReview: [],
+        totalSessions: 0,
+        hiddenDueToConflict: 0,
+      };
+    }
+
+    const slotResults = await Promise.all(
+      activeSemesters.map((sem) => this.getTimetableBySemester(sem.id)),
+    );
+
+    const allSlots = [];
+    activeSemesters.forEach((sem, index) => {
+      (slotResults[index] || []).forEach((slot) => {
+        allSlots.push({
+          ...slot,
+          SemesterId: slot.SemesterId || sem.id,
+          Semester: slot.Semester || { id: sem.id, name: sem.name },
+        });
+      });
+    });
+
+    let instructorSlots = [];
+    if (instructorId) {
+      const instructorResults = await Promise.all(
+        activeSemesters.map((sem) =>
+          this.getTimetableSlotsByInstructor(instructorId, {
+            semesterId: sem.id,
+            yearId,
+          }),
+        ),
+      );
+
+      const byId = new Map();
+      instructorResults.forEach((result) => {
+        const slots = result?.slots || [];
+        slots.forEach((slot) => byId.set(slot.id, slot));
+      });
+      instructorSlots = Array.from(byId.values());
+    }
+
+    return buildAssignableSessionsData({
+      activeSemesters,
+      allSlots,
+      instructorSlots,
+      instructorId,
+    });
+  },
+
   async createTimetableSlot(data) {
     const response = await fetch(`${API_BASE_URL}/timetable`, {
       method: "POST",
@@ -197,6 +305,20 @@ export const api = {
     }
     return response.json();
   },
+
+  async getCoursesBySemester(academicYearId, semesterId) {
+  const url = `${API_BASE_URL}/courses?academicYearId=${academicYearId}&semesterId=${semesterId}`;
+
+  console.log("Calling:", url);
+
+  const response = await fetch(url);
+
+  if (!response.ok) {
+    throw new Error("Failed to fetch courses");
+  }
+
+  return response.json();
+},
 
   async deleteTimetableSlot(id) {
     const response = await fetch(`${API_BASE_URL}/timetable/${id}`, {
@@ -229,29 +351,51 @@ export const api = {
   },
 
   // Courses / Modules
-  async getCourses(options = {}) {
-    const { semesterId, yearId } = options;
-    let url = `${API_BASE_URL}/courses`;
-    
-    const params = new URLSearchParams();
-    if (semesterId) params.append("semesterId", semesterId);
-    if (yearId) params.append("yearId", yearId);
-    
-    if (params.toString()) {
-      url += `?${params.toString()}`;
-    }
-    
+  // async getCourses(options = {}) {
+  //   const { semesterId, yearId } = options;
+  //   let url = `${API_BASE_URL}/courses`;
 
-    const response = await fetch(url);
-    if (!response.ok) {
-      throw new Error("Failed to fetch courses");
-    }
-    return response.json();
-  },
+  //   const params = new URLSearchParams();
+  //   if (semesterId) params.append("semesterId", semesterId);
+  //   if (yearId) params.append("yearId", yearId);
 
+  //   if (params.toString()) {
+  //     url += `?${params.toString()}`;
+  //   }
+
+  //   const response = await fetch(url);
+  //   if (!response.ok) {
+  //     throw new Error("Failed to fetch courses");
+  //   }
+  //   return response.json();
+  // },
+
+  async getCourses(filters = {}) {
+  const params = new URLSearchParams();
+
+  if (filters.academicYearId) {
+    params.append("academicYearId", filters.academicYearId);
+  }
+
+  if (filters.semesterId) {
+    params.append("semesterId", filters.semesterId);
+  }
+
+  const response = await fetch(
+    `${API_BASE_URL}/courses?${params.toString()}`
+  );
+
+  if (!response.ok) {
+    throw new Error("Failed to fetch courses");
+  }
+
+  return response.json();
+},
 
   async getCoursesBySemester(semesterId) {
-    const response = await fetch(`${API_BASE_URL}/courses/by-semester/${semesterId}`);
+    const response = await fetch(
+      `${API_BASE_URL}/courses/by-semester/${semesterId}`,
+    );
     if (!response.ok) {
       throw new Error("Failed to fetch courses by semester");
     }
@@ -302,7 +446,14 @@ export const api = {
     if (!response.ok) {
       throw new Error("Failed to fetch instructors");
     }
-    return response.json();
+    const data = await response.json();
+    if (Array.isArray(data)) {
+      return data.map((item) => ({
+        ...item,
+        imageUrl: resolveImageUrl(item.imageUrl),
+      }));
+    }
+    return data;
   },
 
   async createInstructor(data) {
@@ -324,7 +475,11 @@ export const api = {
     if (!response.ok) {
       throw new Error("Failed to create instructor");
     }
-    return response.json();
+    const result = await response.json();
+    if (result?.imageUrl) {
+      result.imageUrl = resolveImageUrl(result.imageUrl);
+    }
+    return result;
   },
 
   async updateInstructor(id, data) {
@@ -354,20 +509,27 @@ export const api = {
   async getAvailableInstructors(options = {}) {
     const { date, semesterId } = options;
     let url = `${API_BASE_URL}/instructors/available`;
-    
+
     const params = new URLSearchParams();
     if (date) params.append("date", date);
     if (semesterId) params.append("semesterId", semesterId);
-    
+
     if (params.toString()) {
       url += `?${params.toString()}`;
     }
-    
+
     const response = await fetch(url);
     if (!response.ok) {
       throw new Error("Failed to fetch available instructors");
     }
-    return response.json();
+    const data = await response.json();
+    if (Array.isArray(data)) {
+      return data.map((item) => ({
+        ...item,
+        imageUrl: resolveImageUrl(item.imageUrl),
+      }));
+    }
+    return data;
   },
 
   //get lecture halls
@@ -383,15 +545,15 @@ export const api = {
   async getModulesByInstructor(instructorId, options = {}) {
     const { semesterId, yearId } = options;
     let url = `${API_BASE_URL}/courses/by-instructor/${instructorId}`;
-    
+
     const params = new URLSearchParams();
     if (semesterId) params.append("semesterId", semesterId);
     if (yearId) params.append("yearId", yearId);
-    
+
     if (params.toString()) {
       url += `?${params.toString()}`;
     }
-    
+
     const response = await fetch(url);
     if (!response.ok) {
       throw new Error("Failed to fetch modules for instructor");
@@ -417,11 +579,17 @@ export const api = {
   },
 
   async getModuleOutlineByCourse(courseId) {
-    const response = await fetch(`${API_BASE_URL}/module-outlines/course/${courseId}`);
+    const response = await fetch(
+      `${API_BASE_URL}/module-outlines/course/${courseId}`,
+    );
+    const body = await response.json().catch(() => null);
     if (!response.ok) {
-      throw new Error("Failed to fetch module outline for course");
+      const message = body?.message || `Failed to fetch module outline for course (${response.status})`;
+      const error = new Error(message);
+      error.status = response.status;
+      throw error;
     }
-    return response.json();
+    return body;
   },
 
   async createModuleOutline(data) {
@@ -432,10 +600,14 @@ export const api = {
       },
       body: JSON.stringify(data),
     });
+    const body = await response.json().catch(() => null);
     if (!response.ok) {
-      throw new Error("Failed to create module outline");
+      const message = body?.message || "Failed to create module outline";
+      const error = new Error(message);
+      error.status = response.status;
+      throw error;
     }
-    return response.json();
+    return body;
   },
 
   async updateModuleOutline(id, data) {
@@ -446,10 +618,14 @@ export const api = {
       },
       body: JSON.stringify(data),
     });
+    const body = await response.json().catch(() => null);
     if (!response.ok) {
-      throw new Error("Failed to update module outline");
+      const message = body?.message || "Failed to update module outline";
+      const error = new Error(message);
+      error.status = response.status;
+      throw error;
     }
-    return response.json();
+    return body;
   },
 
   async deleteModuleOutline(id) {
@@ -465,14 +641,17 @@ export const api = {
   // Notifications
   async sendAssignmentNote(data) {
     const token = localStorage.getItem("token");
-    const response = await fetch(`${API_BASE_URL}/notifications/assignment-note`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
+    const response = await fetch(
+      `${API_BASE_URL}/notifications/assignment-note`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(data),
       },
-      body: JSON.stringify(data),
-    });
+    );
     if (!response.ok) {
       const err = await response.json().catch(() => ({}));
       throw new Error(err.message || "Failed to send assignment note");

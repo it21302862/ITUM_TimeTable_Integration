@@ -14,11 +14,11 @@ const InstructorsPage = () => {
   const navigate = useNavigate();
   const { yearId, semesterId } = useParams();
   const location = useLocation();
-  
+
   // Get state from navigation
   const yearLabel = location.state?.yearLabel || "";
   const semesterName = location.state?.semesterName || "";
-  
+
   const [instructors, setInstructors] = useState([]);
   const [selected, setSelected] = useState(null);
   const [form, setForm] = useState(emptyInstructor);
@@ -28,16 +28,16 @@ const InstructorsPage = () => {
   const [instructorModulesMap, setInstructorModulesMap] = useState({});
   const [loadingModulesMap, setLoadingModulesMap] = useState({});
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  
+
   // Schedule data for selected instructor
   const [instructorSchedule, setInstructorSchedule] = useState([]);
   const [weeklyWorkload, setWeeklyWorkload] = useState(0);
   const [loadingSchedule, setLoadingSchedule] = useState(false);
-  
+
   // Sorting state
   const [sortBy, setSortBy] = useState("name"); // 'name', 'email', 'department'
   const [sortOrder, setSortOrder] = useState("asc");
-  
+
   // Modal state for add/edit
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
@@ -60,8 +60,10 @@ const InstructorsPage = () => {
         });
         setInstructorModulesMap(initialModulesMap);
         setLoadingModulesMap(initialLoadingMap);
-        
-        console.log("⏳ Starting parallel module loading for all instructors...");
+
+        console.log(
+          "⏳ Starting parallel module loading for all instructors...",
+        );
         // Load all modules in parallel
         await Promise.all(data.map((ins) => loadModules(ins.id)));
         console.log("All instructor modules loaded");
@@ -82,7 +84,10 @@ const InstructorsPage = () => {
       const options = {};
       if (semesterId) options.semesterId = semesterId;
       if (yearId) options.yearId = yearId;
-      const result = await api.getTimetableSlotsByInstructor(instructorId, options);
+      const result = await api.getTimetableSlotsByInstructor(
+        instructorId,
+        options,
+      );
       setInstructorSchedule(result.slots || []);
       setWeeklyWorkload(result.weeklyWorkloadHours || 0);
     } catch (err) {
@@ -102,17 +107,24 @@ const InstructorsPage = () => {
       const options = {};
       if (semesterId) options.semesterId = semesterId;
       if (yearId) options.yearId = yearId;
-      
+
       const modules = await api.getModulesByInstructor(instructorId, options);
 
-      console.log(`Modules loaded for instructor ${instructorId}:`, modules, `Count: ${modules?.length || 0}`);
+      console.log(
+        `Modules loaded for instructor ${instructorId}:`,
+        modules,
+        `Count: ${modules?.length || 0}`,
+      );
 
       setInstructorModulesMap((prev) => ({
         ...prev,
         [instructorId]: modules || [],
       }));
     } catch (err) {
-      console.error(`Failed to fetch modules for instructor ${instructorId}:`, err);
+      console.error(
+        `Failed to fetch modules for instructor ${instructorId}:`,
+        err,
+      );
       setInstructorModulesMap((prev) => ({ ...prev, [instructorId]: [] }));
     } finally {
       setLoadingModulesMap((prev) => ({ ...prev, [instructorId]: false }));
@@ -230,6 +242,17 @@ const InstructorsPage = () => {
     return colors[name.charCodeAt(0) % colors.length];
   };
 
+  const getRoleLabel = (role) => {
+    switch (role) {
+      case "MODULE_LEADER":
+        return "Lecturer";
+      case "SUPPORTIVE_INSTRUCTOR":
+        return "Instructor";
+      default:
+        return null;
+    }
+  };
+
   // Filter instructors
   const filteredInstructors = instructors.filter(
     (ins) =>
@@ -241,7 +264,7 @@ const InstructorsPage = () => {
   // Sort instructors
   const sortedInstructors = [...filteredInstructors].sort((a, b) => {
     let aVal, bVal;
-    
+
     switch (sortBy) {
       case "email":
         aVal = (a.email || "").toLowerCase();
@@ -256,7 +279,7 @@ const InstructorsPage = () => {
         aVal = (a.name || "").toLowerCase();
         bVal = (b.name || "").toLowerCase();
     }
-    
+
     if (aVal < bVal) return sortOrder === "asc" ? -1 : 1;
     if (aVal > bVal) return sortOrder === "asc" ? 1 : -1;
     return 0;
@@ -385,7 +408,11 @@ const InstructorsPage = () => {
                 </button>
                 <span className="text-gray-400">/</span>
                 <button
-                  onClick={() => navigate(`/timetable/${yearId}/${semesterId}`, { state: { yearLabel, semesterName } })}
+                  onClick={() =>
+                    navigate(`/timetable/${yearId}/${semesterId}`, {
+                      state: { yearLabel, semesterName },
+                    })
+                  }
                   className="text-blue-600 hover:underline"
                 >
                   {semesterName || "Semester"}
@@ -393,7 +420,9 @@ const InstructorsPage = () => {
               </>
             )}
             <span className="text-gray-400">/</span>
-            <span className="text-gray-600 dark:text-gray-400">Instructors</span>
+            <span className="text-gray-600 dark:text-gray-400">
+              Instructors
+            </span>
           </div>
           {/* Mobile sidebar toggle */}
           <button
@@ -407,45 +436,58 @@ const InstructorsPage = () => {
 
       <div className="flex flex-1 overflow-hidden">
         {/* Left Sidebar - Directory - Hidden on mobile unless toggled */}
-        <aside className={`${sidebarOpen ? 'block' : 'hidden'} lg:block w-64 bg-white dark:bg-gray-900 border-r border-[#e7ebf3] dark:border-gray-800 flex flex-col absolute lg:relative z-40 h-full`}>
+        <aside
+          className={`${sidebarOpen ? "block" : "hidden"} lg:block w-64 bg-white dark:bg-gray-900 border-r border-[#e7ebf3] dark:border-gray-800 flex flex-col absolute lg:relative z-40 h-full`}
+        >
           <div className="p-6 flex-1 flex flex-col gap-6">
             <div className="space-y-4">
               <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider">
                 Management
               </h3>
               <nav className="space-y-1">
-                <button
-                  className="w-full flex items-center gap-3 px-3 py-2 rounded-lg bg-blue-600/10 text-blue-700 dark:text-blue-400 font-medium"
-                >
-                  <span className="material-symbols-outlined text-xl">groups</span>
+                <button className="w-full flex items-center gap-3 px-3 py-2 rounded-lg bg-blue-600/10 text-blue-700 dark:text-blue-400 font-medium">
+                  <span className="material-symbols-outlined text-xl">
+                    groups
+                  </span>
                   <span className="text-sm font-medium">All Instructors</span>
                 </button>
                 <button
                   onClick={() => {
                     if (yearId && semesterId) {
-                      navigate(`/timetable/${yearId}/${semesterId}/available-instructors`, { 
-                        state: { yearLabel, semesterName } 
-                      });
+                      navigate(
+                        `/timetable/${yearId}/${semesterId}/available-instructors`,
+                        {
+                          state: { yearLabel, semesterName },
+                        },
+                      );
                     } else {
                       navigate("/available-instructors");
                     }
                   }}
                   className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-600 dark:text-gray-400"
                 >
-                  <span className="material-symbols-outlined text-xl">event_available</span>
-                  <span className="text-sm font-medium">Available Instructors</span>
+                  <span className="material-symbols-outlined text-xl">
+                    event_available
+                  </span>
+                  <span className="text-sm font-medium">
+                    Available Instructors
+                  </span>
                 </button>
                 <button
                   onClick={() => {
                     if (yearId && semesterId) {
-                      navigate(`/modules/${yearId}/${semesterId}`, { state: { yearLabel, semesterName } });
+                      navigate(`/modules/${yearId}/${semesterId}`, {
+                        state: { yearLabel, semesterName },
+                      });
                     } else {
                       navigate("/");
                     }
                   }}
                   className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-600 dark:text-gray-400"
                 >
-                  <span className="material-symbols-outlined text-xl">book</span>
+                  <span className="material-symbols-outlined text-xl">
+                    book
+                  </span>
                   <span className="text-sm font-medium">Modules</span>
                 </button>
               </nav>
@@ -465,7 +507,11 @@ const InstructorsPage = () => {
                 </button>
                 {yearId && semesterId ? (
                   <button
-                    onClick={() => navigate(`/timetable/${yearId}/${semesterId}`, { state: { yearLabel, semesterName } })}
+                    onClick={() =>
+                      navigate(`/timetable/${yearId}/${semesterId}`, {
+                        state: { yearLabel, semesterName },
+                      })
+                    }
                     className="flex items-center gap-3 px-4 py-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-[#0d121b] dark:text-white rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 transition-all font-medium"
                   >
                     <span className="material-symbols-outlined">table</span>
@@ -519,11 +565,13 @@ const InstructorsPage = () => {
                     <option value="email-asc">Email (A-Z)</option>
                     <option value="email-desc">Email (Z-A)</option>
                   </select>
-                  <button 
+                  <button
                     onClick={openAddModal}
                     className="p-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors hidden sm:flex items-center gap-2 px-4 font-medium"
                   >
-                    <span className="material-symbols-outlined">person_add</span>
+                    <span className="material-symbols-outlined">
+                      person_add
+                    </span>
                     <span className="hidden md:inline">Add Instructor</span>
                   </button>
                 </div>
@@ -533,7 +581,9 @@ const InstructorsPage = () => {
             {/* Search Bar */}
             <div className="mb-6">
               <div className="relative max-w-md">
-                <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">search</span>
+                <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
+                  search
+                </span>
                 <input
                   type="text"
                   placeholder="Search instructors..."
@@ -551,13 +601,16 @@ const InstructorsPage = () => {
                   const color = getColorClass(ins.name);
                   const modules = instructorModulesMap[ins.id];
                   const isLoading = loadingModulesMap[ins.id];
-                  
+
                   // Debug output
-                  console.log(`Card render for instructor ${ins.id} (${ins.name}):`, {
-                    isLoading,
-                    modules: modules?.length || 0,
-                    modulesData: modules
-                  });
+                  console.log(
+                    `Card render for instructor ${ins.id} (${ins.name}):`,
+                    {
+                      isLoading,
+                      modules: modules?.length || 0,
+                      modulesData: modules,
+                    },
+                  );
 
                   return (
                     <div
@@ -587,13 +640,13 @@ const InstructorsPage = () => {
                                   {ins.name}
                                 </h3>
 
-                                {ins.type && (
+                                {getRoleLabel(ins.role) && (
                                   <span
-                                    className="px-2 py-0.5 bg-blue-100 dark:bg-blue-900/30
-                                     text-blue-600 text-[10px] font-bold
-                                     rounded-full uppercase"
+                                    className="px-4 py-0.5 bg-blue-100 dark:bg-blue-900/30
+      text-blue-600 text-[10px] font-bold
+      rounded-full uppercase"
                                   >
-                                    {ins.type}
+                                    {getRoleLabel(ins.role)}
                                   </span>
                                 )}
                               </div>
@@ -772,8 +825,12 @@ const InstructorsPage = () => {
                   {/* Weekly Workload */}
                   <div className="pt-4 border-t border-primary/10">
                     <div className="flex items-center justify-between text-sm">
-                      <span className="text-gray-600 dark:text-gray-400">Weekly Workload</span>
-                      <span className="font-bold text-blue-600">{weeklyWorkload} hours</span>
+                      <span className="text-gray-600 dark:text-gray-400">
+                        Weekly Workload
+                      </span>
+                      <span className="font-bold text-blue-600">
+                        {weeklyWorkload} hours
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -802,10 +859,14 @@ const InstructorsPage = () => {
                                   {getSessionTypeLabel(slot.sessionType)}
                                 </span>
                                 <span className="text-xs text-gray-500">
-                                  {getDayAbbr(slot.day)} {formatTime(slot.startTime)} - {formatTime(slot.endTime)}
+                                  {getDayAbbr(slot.day)}{" "}
+                                  {formatTime(slot.startTime)} -{" "}
+                                  {formatTime(slot.endTime)}
                                 </span>
                               </div>
-                              <p className="text-xs font-bold">{slot.Course?.name || "Unknown Module"}</p>
+                              <p className="text-xs font-bold">
+                                {slot.Course?.name || "Unknown Module"}
+                              </p>
                               <p className="text-[10px] text-blue-500 flex items-center gap-1 mt-1">
                                 <span className="material-symbols-outlined text-[12px]">
                                   location_on
@@ -819,21 +880,23 @@ const InstructorsPage = () => {
                     </div>
                   ) : (
                     <div className="text-center text-gray-500 text-sm py-4">
-                      {semesterId ? "No leader module sessions scheduled for this semester" : "Select a semester to view schedule"}
+                      {semesterId
+                        ? "No leader module sessions scheduled for this semester"
+                        : "Select a semester to view schedule"}
                     </div>
                   )}
                 </div>
 
                 {/* Actions */}
                 <div className="pt-4 flex flex-col gap-3 border-t border-gray-100 dark:border-gray-800">
-                  <button 
+                  <button
                     onClick={() => openEditModal(selected)}
                     className="w-full bg-blue-600 text-white py-3 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-blue-700 transition-colors"
                   >
                     <span className="material-symbols-outlined">edit</span>
                     Edit Instructor
                   </button>
-                  <button 
+                  <button
                     onClick={() => window.print()}
                     className="w-full bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 py-3 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
                   >
@@ -872,7 +935,9 @@ const InstructorsPage = () => {
 
             <form onSubmit={handleFormSubmit} className="p-6 space-y-5">
               <div className="space-y-1.5">
-                <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Full Name</label>
+                <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">
+                  Full Name
+                </label>
                 <input
                   name="name"
                   value={form.name}
@@ -884,7 +949,9 @@ const InstructorsPage = () => {
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Email</label>
+                <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">
+                  Email
+                </label>
                 <input
                   name="email"
                   type="email"
@@ -897,7 +964,9 @@ const InstructorsPage = () => {
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Department</label>
+                <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">
+                  Department
+                </label>
                 <input
                   name="department"
                   value={form.department}
@@ -908,7 +977,9 @@ const InstructorsPage = () => {
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Address / Office</label>
+                <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">
+                  Address / Office
+                </label>
                 <textarea
                   name="address"
                   value={form.address}

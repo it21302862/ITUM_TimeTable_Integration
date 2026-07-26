@@ -89,8 +89,14 @@ const ModuleOutlinePage = () => {
         contentQuality: data.contentQuality || "Medium",
       });
     } catch (err) {
-      if (err.message.includes("not found")) {
+      if (err.status === 404 || err.message.toLowerCase().includes("not found")) {
         setOutline(null);
+        setFormData((prev) => ({
+          ...prev,
+          assessments: [],
+          bibliography: "",
+        }));
+        setError(null);
       } else {
         setError(err.message);
       }
@@ -144,7 +150,7 @@ const ModuleOutlinePage = () => {
 
   const addAssessment = () => {
     if (newAssessment.type.trim() && String(newAssessment.weight).trim()) {
-      if (editingAssessmentIndex !== null) {
+      if (editingAssessmentIndex !== null && editingAssessmentIndex >= 0) {
         const updated = [...formData.assessments];
         updated[editingAssessmentIndex] = newAssessment;
         setFormData((prev) => ({
@@ -172,13 +178,20 @@ const ModuleOutlinePage = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
+      const payload = {
+        courseId: Number(courseId),
+        description: formData.description,
+        outcomes: formData.outcomes || [],
+        weeklyTopics: formData.weeklyTopics || [],
+        assessments: formData.assessments || [],
+        bibliography: formData.bibliography || "",
+        contentQuality: formData.contentQuality || "Medium",
+      };
+
       if (outline) {
-        await api.updateModuleOutline(outline.id, formData);
+        await api.updateModuleOutline(outline.id, payload);
       } else {
-        await api.createModuleOutline({
-          courseId: Number(courseId),
-          ...formData,
-        });
+        await api.createModuleOutline(payload);
       }
       setLastSaved(
         new Date().toLocaleTimeString("en-US", {
