@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { Fragment, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { api } from "../services/api";
 
@@ -242,7 +242,7 @@ const AcademicPlansPage = () => {
   return (
     <div className="bg-background-light dark:bg-background-dark text-[#0d121b] dark:text-white min-h-screen">
       {/* Header */}
-      <header className="flex items-center justify-between whitespace-nowrap border-b border-solid border-[#cfd7e7] dark:border-gray-800 bg-white dark:bg-[#1a2131] px-10 py-3 z-50">
+      <header className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 whitespace-nowrap border-b border-solid border-[#cfd7e7] dark:border-gray-800 bg-white dark:bg-[#1a2131] px-4 sm:px-6 lg:px-10 py-4 z-50">
         <div className="flex items-center gap-4 text-primary-blue">
           <div className="size-8">
             <svg
@@ -262,9 +262,9 @@ const AcademicPlansPage = () => {
         </div>
       </header>
 
-      <main className="flex-1 overflow-hidden p-6">
-        <div className="max-w-[1600px] mx-auto">
-          <div className="flex items-center justify-between mb-8">
+      <main className="flex-1 overflow-hidden p-4 sm:p-6 lg:p-8">
+        <div className="max-w-[1600px] mx-auto px-0 sm:px-2 lg:px-0">
+          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between mb-8">
             <div>
               <h1 className="text-2xl font-bold text-[#0d121b] dark:text-white">
                 Full Academic View ({semester1?.name || "Semester 1"} &amp;{" "}
@@ -274,8 +274,8 @@ const AcademicPlansPage = () => {
                 Faculty-wide planning overview &amp; conflict detection
               </p>
             </div>
-            <div className="flex items-center gap-4">
-              <div className="flex gap-4 px-4 py-2 bg-white dark:bg-[#1a2131] rounded-lg border border-[#e7ebf3] dark:border-gray-800 text-xs font-medium">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+              <div className="flex flex-wrap gap-4 px-4 py-2 bg-white dark:bg-[#1a2131] rounded-lg border border-[#e7ebf3] dark:border-gray-800 text-xs font-medium">
                 <div className="flex items-center gap-2">
                   <span className="size-3 rounded-full bg-blue-500"></span>
                   <span>Main Modules</span>
@@ -309,47 +309,47 @@ const AcademicPlansPage = () => {
                   {formatAcademicYear(semester1)}
                 </span>
               </div>
-              <div className="bg-white dark:bg-[#1a2131] rounded-xl shadow-sm border border-[#e7ebf3] dark:border-gray-800 overflow-hidden flex flex-col">
-                <div className="timetable-grid bg-gray-50 dark:bg-gray-800/50">
-                  <div className="border-b border-r border-gray-100 dark:border-gray-800"></div>
-                  {days.map((day) => (
-                    <div key={day} className="day-header">
-                      {day}
-                    </div>
-                  ))}
-                </div>
-                <div className="flex-1 overflow-y-auto timetable-grid max-h-[500px]">
-                  {timeSlots.map((time) => (
-                    <>
-                      <div key={time} className="time-label">
-                        {time}
+              <div className="overflow-x-auto rounded-xl shadow-sm border border-[#e7ebf3] dark:border-gray-800 bg-white dark:bg-[#1a2131]">
+                <div className="min-w-[520px] sm:min-w-[600px] overflow-hidden rounded-xl flex flex-col">
+                  <div className="timetable-grid bg-gray-50 dark:bg-gray-800/50">
+                    <div className="border-b border-r border-gray-100 dark:border-gray-800"></div>
+                    {days.map((day) => (
+                      <div key={day} className="day-header">
+                        {day}
                       </div>
-                      {days.map((day) => {
-                        const slot = getSlotForTimeAndDay(
-                          semester1Slots,
-                          time,
-                          day,
-                        );
-                        const colorClass = getSlotColor(slot, userData.id);
-                        return (
-                          <div key={`${time}-${day}`} className="slot">
-                            {slot && (
-                              <div
-                                className={`p-2 rounded text-[10px] h-full ${colorClass}`}
-                              >
-                                <span className="font-bold block">
-                                  {slot.Course?.code}: {slot.Course?.name}
-                                </span>
-                                <span className="text-gray-500 block">
-                                  {slot.LectureHall?.name || "TBD"}
-                                </span>
-                              </div>
-                            )}
-                          </div>
-                        );
-                      })}
-                    </>
-                  ))}
+                    ))}
+                  </div>
+                  <div className="flex-1 overflow-y-auto timetable-grid max-h-[500px]">
+                    {timeSlots.map((time) => (
+                      <Fragment key={time}>
+                        <div className="time-label">{time}</div>
+                        {days.map((day) => {
+                          const slot = getSlotForTimeAndDay(
+                            semester1Slots,
+                            time,
+                            day,
+                          );
+                          const colorClass = getSlotColor(slot, userData.id);
+                          return (
+                            <div key={`${time}-${day}`} className="slot">
+                              {slot && (
+                                <div
+                                  className={`p-2 rounded text-[10px] h-full ${colorClass}`}
+                                >
+                                  <span className="font-bold block">
+                                    {slot.Course?.code}: {slot.Course?.name}
+                                  </span>
+                                  <span className="text-gray-500 block">
+                                    {slot.LectureHall?.name || "TBD"}
+                                  </span>
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </Fragment>
+                    ))}
+                  </div>
                 </div>
               </div>
             </section>
@@ -365,47 +365,47 @@ const AcademicPlansPage = () => {
                   {formatAcademicYear(semester3)}
                 </span>
               </div>
-              <div className="bg-white dark:bg-[#1a2131] rounded-xl shadow-sm border border-[#e7ebf3] dark:border-gray-800 overflow-hidden">
-                <div className="timetable-grid bg-gray-50 dark:bg-gray-800/50">
-                  <div className="border-b border-r border-gray-100 dark:border-gray-800"></div>
-                  {days.map((day) => (
-                    <div key={day} className="day-header">
-                      {day}
-                    </div>
-                  ))}
-                </div>
-                <div className="flex-1 overflow-y-auto timetable-grid max-h-[500px]">
-                  {timeSlots.map((time) => (
-                    <>
-                      <div key={time} className="time-label">
-                        {time}
+              <div className="overflow-x-auto rounded-xl shadow-sm border border-[#e7ebf3] dark:border-gray-800 bg-white dark:bg-[#1a2131]">
+                <div className="min-w-[520px] sm:min-w-[600px] overflow-hidden rounded-xl flex flex-col">
+                  <div className="timetable-grid bg-gray-50 dark:bg-gray-800/50">
+                    <div className="border-b border-r border-gray-100 dark:border-gray-800"></div>
+                    {days.map((day) => (
+                      <div key={day} className="day-header">
+                        {day}
                       </div>
-                      {days.map((day) => {
-                        const slot = getSlotForTimeAndDay(
-                          semester3Slots,
-                          time,
-                          day,
-                        );
-                        const colorClass = getSlotColor(slot, userData.id);
-                        return (
-                          <div key={`${time}-${day}`} className="slot">
-                            {slot && (
-                              <div
-                                className={`p-2 rounded text-[10px] h-full ${colorClass}`}
-                              >
-                                <span className="font-bold block">
-                                  {slot.Course?.code}: {slot.Course?.name}
-                                </span>
-                                <span className="text-gray-500 block">
-                                  {slot.LectureHall?.name || "TBD"}
-                                </span>
-                              </div>
-                            )}
-                          </div>
-                        );
-                      })}
-                    </>
-                  ))}
+                    ))}
+                  </div>
+                  <div className="flex-1 overflow-y-auto timetable-grid max-h-[500px]">
+                    {timeSlots.map((time) => (
+                      <Fragment key={time}>
+                        <div className="time-label">{time}</div>
+                        {days.map((day) => {
+                          const slot = getSlotForTimeAndDay(
+                            semester3Slots,
+                            time,
+                            day,
+                          );
+                          const colorClass = getSlotColor(slot, userData.id);
+                          return (
+                            <div key={`${time}-${day}`} className="slot">
+                              {slot && (
+                                <div
+                                  className={`p-2 rounded text-[10px] h-full ${colorClass}`}
+                                >
+                                  <span className="font-bold block">
+                                    {slot.Course?.code}: {slot.Course?.name}
+                                  </span>
+                                  <span className="text-gray-500 block">
+                                    {slot.LectureHall?.name || "TBD"}
+                                  </span>
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </Fragment>
+                    ))}
+                  </div>
                 </div>
               </div>
             </section>
