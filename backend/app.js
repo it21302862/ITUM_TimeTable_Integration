@@ -15,28 +15,18 @@ import notificationRoutes from "./routes/notification.routes.js";
 
 const app = express();
 
-const allowedOrigins = [
-  "http://localhost:5173",                 // Local Vite
-  "https://itum-uni-time-manager.vercel.app", // deployed frontend
-];
+app.use(cors({
+  origin: [
+    "http://localhost:5173",
+    "https://itum-uni-time-manager.vercel.app"
+  ],
+  credentials: true,
+}));
 
-app.use(
-  cors({
-    origin(origin, callback) {
-      // Allow Postman and server-to-server requests
-      if (!origin) return callback(null, true);
-
-      if (allowedOrigins.includes(origin)) {
-        return callback(null, true);
-      }
-
-      return callback(new Error(`Origin ${origin} not allowed by CORS`));
-    },
-    credentials: true,
-  })
-);
-
-app.use(json());
+app.use((req, res, next) => {
+  console.log("Origin:", req.headers.origin);
+  next();
+});
 
 // Serve uploaded files
 const uploadsPath = path.join(process.cwd(), "uploads");
