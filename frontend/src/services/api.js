@@ -3,7 +3,8 @@ import {
   buildAssignableSessionsData,
 } from "../utils/assignableSessions.js";
 
-const API_BASE_URL = "https://af-nasa-backend.onrender.com/api";
+const API_BASE_URL = (import.meta.env.VITE_API_URL || "").replace(/\/$/, "");
+const API_BASE_URL_ORIGIN = API_BASE_URL.replace(/\/api\/?$/, "");
 
 const resolveImageUrl = (imageUrl) => {
   if (typeof imageUrl !== "string") return imageUrl;
@@ -11,7 +12,7 @@ const resolveImageUrl = (imageUrl) => {
     return imageUrl;
   }
   if (imageUrl.startsWith("/")) {
-    return API_BASE_URL.replace(/\/api\/?$/, "") + imageUrl;
+    return API_BASE_URL_ORIGIN + imageUrl;
   }
   return imageUrl;
 };

@@ -25,20 +25,7 @@ export default function LoginPage() {
     setIsLoading(true);
 
     try {
-      // TODO: Replace with actual API endpoint
-      const response = await fetch("https://af-nasa-backend.onrender.com/api/auth/login", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ email, password }),
-      });
-
-      if (!response.ok) {
-        throw new Error("Invalid email or password");
-      }
-
-      const data = await response.json();
+      const data = await api.login(email, password);
 
       if (data.token) {
         localStorage.setItem("token", data.token);
