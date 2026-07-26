@@ -11,11 +11,11 @@ export async function create(req, res) {
 
     const outline = await ModuleOutline.create({
       courseId,
-      description,
-      outcomes: outcomes || [],
-      weeklyTopics: weeklyTopics || [],
-      assessments: assessments || [],
-      bibliography,
+      description: description || "",
+      outcomes: Array.isArray(outcomes) ? outcomes : [],
+      weeklyTopics: Array.isArray(weeklyTopics) ? weeklyTopics : [],
+      assessments: Array.isArray(assessments) ? assessments : [],
+      bibliography: bibliography || "",
       contentQuality: contentQuality || "Medium"
     });
 
@@ -83,11 +83,11 @@ export async function update(req, res) {
 
     const [updated] = await ModuleOutline.update(
       {
-        description,
-        outcomes: outcomes || [],
-        weeklyTopics: weeklyTopics || [],
-        assessments: assessments || [],
-        bibliography,
+        description: description || "",
+        outcomes: Array.isArray(outcomes) ? outcomes : [],
+        weeklyTopics: Array.isArray(weeklyTopics) ? weeklyTopics : [],
+        assessments: Array.isArray(assessments) ? assessments : [],
+        bibliography: bibliography || "",
         contentQuality: contentQuality || "Medium"
       },
       { where: { id: req.params.id } }
