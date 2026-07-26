@@ -249,6 +249,7 @@ export const getUserProfile = async (req, res) => {
       email: instructor.email,
       department: instructor.department,
       address: instructor.address,
+      phone: instructor.phone,
       role: instructor.role,
       imageUrl: instructor.imageUrl,
     });
