@@ -23,8 +23,11 @@ app.use(cors({
   credentials: true,
 }));
 
+app.use(json()); 
+
 app.use((req, res, next) => {
   console.log("Origin:", req.headers.origin);
+  console.log("Body:", req.body);
   next();
 });
 
