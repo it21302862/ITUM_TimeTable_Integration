@@ -472,42 +472,57 @@ const WeeklyTimetable = () => {
       </div>
 
       <div className="flex flex-col lg:flex-row h-[calc(100vh-7rem)] overflow-hidden">
+        {sidebarOpen && (
+          <div
+            className="fixed inset-0 bg-black/20 lg:hidden z-30"
+            onClick={() => setSidebarOpen(false)}
+          />
+        )}
+
         {/* Sidebar - Hidden on mobile unless toggled */}
         <aside
           className={`${sidebarOpen ? "block" : "hidden"} lg:block w-64 bg-white dark:bg-gray-900 border-r border-[#e7ebf3] dark:border-gray-800 flex flex-col absolute lg:relative z-40 h-full lg:h-auto`}
         >
           <div className="p-6 flex-1 flex flex-col gap-6">
-            <div>
+            <div className="flex items-center justify-between gap-4">
               <h3 className="text-xs font-bold uppercase tracking-wide text-gray-500 mb-3">
                 Navigation
               </h3>
-              <nav className="space-y-1.5">
-                <button
-                  onClick={() => setViewMode("weekly")}
-                  className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium ${
-                    viewMode === "weekly"
-                      ? "bg-blue-600 text-white"
-                      : "hover:bg-gray-100 dark:hover:bg-gray-800"
-                  }`}
-                >
-                  <span className="material-symbols-outlined">
-                    calendar_view_week
-                  </span>
-                  Weekly View
-                </button>
-                <button
-                  onClick={() => setViewMode("daily")}
-                  className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium ${
-                    viewMode === "daily"
-                      ? "bg-blue-600/10 text-blue-700 dark:text-blue-400"
-                      : "hover:bg-gray-100 dark:hover:bg-gray-800"
-                  }`}
-                >
-                  <span className="material-symbols-outlined">view_day</span>
-                  List View
-                </button>
-              </nav>
+              <button
+                type="button"
+                onClick={() => setSidebarOpen(false)}
+                className="lg:hidden rounded-lg p-2 text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+              >
+                <span className="material-symbols-outlined">close</span>
+              </button>
             </div>
+
+            <nav className="space-y-1.5">
+              <button
+                onClick={() => setViewMode("weekly")}
+                className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium ${
+                  viewMode === "weekly"
+                    ? "bg-blue-600 text-white"
+                    : "hover:bg-gray-100 dark:hover:bg-gray-800"
+                }`}
+              >
+                <span className="material-symbols-outlined">
+                  calendar_view_week
+                </span>
+                Weekly View
+              </button>
+              <button
+                onClick={() => setViewMode("daily")}
+                className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium ${
+                  viewMode === "daily"
+                    ? "bg-blue-600/10 text-blue-700 dark:text-blue-400"
+                    : "hover:bg-gray-100 dark:hover:bg-gray-800"
+                }`}
+              >
+                <span className="material-symbols-outlined">view_day</span>
+                List View
+              </button>
+            </nav>
 
             <div className="mt-auto border-t border-gray-100 dark:border-gray-800 pt-6 space-y-4">
               <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider">
@@ -607,45 +622,45 @@ const WeeklyTimetable = () => {
                             const hasAdditionalInstructor =
                               slot.SupportiveInstructors?.length > 0;
                             return (
-                            <button
-                              key={slot.id}
-                              onClick={() => setSelectedSlot(slot)}
-                              className={`w-full h-full text-left rounded p-2.5 ${getSessionTypeColor(
-                                slot.sessionType,
-                              )} hover:opacity-90 transition-opacity text-xs relative`}
-                            >
-                              {hasAdditionalInstructor && (
-                                <span
-                                  className="absolute top-1.5 right-1.5 size-5 rounded-full bg-red-500 text-white flex items-center justify-center shadow-sm"
-                                  title={`Additional instructor: ${slot.SupportiveInstructors.map((i) => i.name).join(", ")}`}
-                                >
-                                  <span className="material-symbols-outlined text-[12px]">
-                                    person_add
+                              <button
+                                key={slot.id}
+                                onClick={() => setSelectedSlot(slot)}
+                                className={`w-full h-full text-left rounded p-2.5 ${getSessionTypeColor(
+                                  slot.sessionType,
+                                )} hover:opacity-90 transition-opacity text-xs relative`}
+                              >
+                                {hasAdditionalInstructor && (
+                                  <span
+                                    className="absolute top-1.5 right-1.5 size-5 rounded-full bg-red-500 text-white flex items-center justify-center shadow-sm"
+                                    title={`Additional instructor: ${slot.SupportiveInstructors.map((i) => i.name).join(", ")}`}
+                                  >
+                                    <span className="material-symbols-outlined text-[12px]">
+                                      person_add
+                                    </span>
                                   </span>
-                                </span>
-                              )}
-                              <div className="font-bold uppercase text-[10px] opacity-90">
-                                {getSessionTypeLabel(slot.sessionType)}
-                              </div>
-                              <div className="font-semibold mt-0.5">
-                                {slot.Course?.name ||
-                                  slot.Course?.code ||
-                                  "Course"}
-                              </div>
-                              <div className="text-[10px] opacity-80">
-                                {slot.LectureHall?.name || "Room TBD"}
-                              </div>
-                              <div className="text-[10px] opacity-70 mt-1">
-                                {formatTime(slot.startTime)} –{" "}
-                                {formatTime(slot.endTime)}
-                              </div>
-                              {hasAdditionalInstructor && (
-                                <div className="text-[9px] text-red-600 dark:text-red-400 font-bold mt-1 truncate">
-                                  + {slot.SupportiveInstructors.map((i) => i.name).join(", ")}
+                                )}
+                                <div className="font-bold uppercase text-[10px] opacity-90">
+                                  {getSessionTypeLabel(slot.sessionType)}
                                 </div>
-                              )}
-                            </button>
-                          );
+                                <div className="font-semibold mt-0.5">
+                                  {slot.Course?.name ||
+                                    slot.Course?.code ||
+                                    "Course"}
+                                </div>
+                                <div className="text-[10px] opacity-80">
+                                  {slot.LectureHall?.name || "Room TBD"}
+                                </div>
+                                <div className="text-[10px] opacity-70 mt-1">
+                                  {formatTime(slot.startTime)} –{" "}
+                                  {formatTime(slot.endTime)}
+                                </div>
+                                {hasAdditionalInstructor && (
+                                  <div className="text-[9px] text-red-600 dark:text-red-400 font-bold mt-1 truncate">
+                                    + {slot.SupportiveInstructors.map((i) => i.name).join(", ")}
+                                  </div>
+                                )}
+                              </button>
+                            );
                           })}
                         </div>
                       );
@@ -658,13 +673,11 @@ const WeeklyTimetable = () => {
         </main>
 
         {/* Right Details Panel */}
-        <aside className="w-80 bg-white dark:bg-gray-900 border-l border-[#e7ebf3] dark:border-gray-800 flex flex-col">
-          <div className="p-6">
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-lg font-bold">
-                {selectedSlot ? "Slot Details" : "No Slot Selected"}
-              </h2>
-              {selectedSlot && (
+        {selectedSlot && (
+          <aside className="w-80 bg-white dark:bg-gray-900 border-l border-[#e7ebf3] dark:border-gray-800 flex flex-col">
+            <div className="p-6">
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-lg font-bold">Slot Details</h2>
                 <button
                   type="button"
                   onClick={() => setSelectedSlot(null)}
@@ -672,10 +685,8 @@ const WeeklyTimetable = () => {
                 >
                   <span className="material-symbols-outlined">close</span>
                 </button>
-              )}
-            </div>
+              </div>
 
-            {selectedSlot ? (
               <div className="space-y-6">
                 <div className="p-4 bg-primary-blue/5 rounded-xl border border-primary-blue/10">
                   <span className="text-[10px] font-black text-primary-blue uppercase tracking-widest">
@@ -803,13 +814,9 @@ const WeeklyTimetable = () => {
                   </button>
                 </div>
               </div>
-            ) : (
-              <p className="text-sm text-gray-500">
-                Select a time slot on the timetable to view its details here.
-              </p>
-            )}
-          </div>
-        </aside>
+            </div>
+          </aside>
+        )}
       </div>
 
       {/* Add New Slot Modal */}
