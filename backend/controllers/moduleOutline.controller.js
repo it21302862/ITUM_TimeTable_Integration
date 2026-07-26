@@ -2,7 +2,20 @@ import { ModuleOutline, Course } from "../models/index.js";
 
 export async function create(req, res) {
   try {
-    const { courseId, description, outcomes, weeklyTopics, assessments, bibliography, contentQuality } = req.body;
+    const {
+      courseId: rawCourseId,
+      description,
+      outcomes,
+      weeklyTopics,
+      assessments,
+      bibliography,
+      contentQuality,
+    } = req.body;
+
+    const courseId = Number(rawCourseId);
+    if (Number.isNaN(courseId)) {
+      return res.status(400).json({ message: "Invalid courseId" });
+    }
 
     const existing = await ModuleOutline.findOne({ where: { courseId } });
     if (existing) {
@@ -61,8 +74,13 @@ export async function getOne(req, res) {
 
 export async function getByCourse(req, res) {
   try {
+    const courseId = Number(req.params.courseId);
+    if (Number.isNaN(courseId)) {
+      return res.status(400).json({ message: "Invalid courseId" });
+    }
+
     const outline = await ModuleOutline.findOne({
-      where: { courseId: req.params.courseId },
+      where: { courseId },
       include: [{ model: Course }]
     });
 

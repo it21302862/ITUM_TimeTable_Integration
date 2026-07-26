@@ -3,6 +3,7 @@ export default (sequelize, DataTypes) => {
     courseId: {
       type: DataTypes.INTEGER,
       allowNull: false,
+      unique: true,
       references: {
         model: "Courses",
         key: "id"
