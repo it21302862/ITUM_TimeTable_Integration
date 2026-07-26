@@ -83,42 +83,124 @@ async function sendResetSms(phone, code) {
   }
 }
 
+// export const login = async (req, res) => {
+//   try {
+//     const { email, password } = req.body;
+
+//     if (!email || !password) {
+//       return res.status(400).json({ error: "Email and password are required" });
+//     }
+
+//     // Normalize input and find instructor in database
+//     const normalizedEmail = normalizeEmail(email);
+//     const instructor = await findInstructorByEmail(normalizedEmail);
+
+//     if (!instructor) {
+//       return res.status(401).json({ error: "Invalid email or password" });
+//     }
+
+//     // Compare password with hashed password in database
+//     const passwordMatch = await bcrypt.compare(password, instructor.password);
+
+//     if (!passwordMatch) {
+//       return res.status(401).json({ error: "Invalid email or password" });
+//     }
+
+//     // Generate JWT token
+//     const token = jwt.sign(
+//       { 
+//         id: instructor.id, 
+//         email: instructor.email, 
+//         name: instructor.name,
+//         role: instructor.role
+//       },
+//       JWT_SECRET,
+//       { expiresIn: "24h" }
+//     );
+
+//     res.json({
+//       token,
+//       user: {
+//         id: instructor.id,
+//         email: instructor.email,
+//         name: instructor.name,
+//         role: instructor.role,
+//       },
+//     });
+//   } catch (error) {
+//     console.error("Login error:", error);
+//     res.status(500).json({ error: "Login failed" });
+//   }
+// };
+
+
 export const login = async (req, res) => {
   try {
-    const { email, password } = req.body;
+    console.log("========== LOGIN REQUEST ==========");
+    console.log("Headers:", req.headers);
+    console.log("Body:", req.body);
+
+    const { email, password } = req.body || {};
 
     if (!email || !password) {
-      return res.status(400).json({ error: "Email and password are required" });
+      console.log("Missing email or password");
+      return res.status(400).json({
+        error: "Email and password are required",
+      });
     }
 
-    // Normalize input and find instructor in database
     const normalizedEmail = normalizeEmail(email);
+    console.log("Normalized email:", normalizedEmail);
+
     const instructor = await findInstructorByEmail(normalizedEmail);
 
     if (!instructor) {
-      return res.status(401).json({ error: "Invalid email or password" });
+      console.log("User not found");
+      return res.status(401).json({
+        error: "Invalid email or password",
+      });
     }
 
-    // Compare password with hashed password in database
-    const passwordMatch = await bcrypt.compare(password, instructor.password);
+    console.log("User found:", instructor.email);
+    console.log("Stored password:", instructor.password);
 
-    if (!passwordMatch) {
-      return res.status(401).json({ error: "Invalid email or password" });
+    // If the password in DB is plain text, this will tell us
+    if (!instructor.password.startsWith("$2")) {
+      console.log("WARNING: Password in database is NOT bcrypt hashed!");
+      console.log("Database value:", instructor.password);
     }
 
-    // Generate JWT token
-    const token = jwt.sign(
-      { 
-        id: instructor.id, 
-        email: instructor.email, 
-        name: instructor.name,
-        role: instructor.role
-      },
-      JWT_SECRET,
-      { expiresIn: "24h" }
+    const passwordMatch = await bcrypt.compare(
+      password,
+      instructor.password
     );
 
-    res.json({
+    console.log("Password match:", passwordMatch);
+
+    if (!passwordMatch) {
+      return res.status(401).json({
+        error: "Invalid email or password",
+      });
+    }
+
+    console.log("Generating JWT...");
+
+    const token = jwt.sign(
+      {
+        id: instructor.id,
+        email: instructor.email,
+        name: instructor.name,
+        role: instructor.role,
+      },
+      JWT_SECRET,
+      {
+        expiresIn: "24h",
+      }
+    );
+
+    console.log("JWT generated successfully");
+
+    return res.json({
       token,
       user: {
         id: instructor.id,
@@ -128,8 +210,13 @@ export const login = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("Login error:", error);
-    res.status(500).json({ error: "Login failed" });
+    console.error("========== LOGIN ERROR ==========");
+    console.error(error);
+    console.error(error.stack);
+
+    return res.status(500).json({
+      error: error.message,
+    });
   }
 };
 

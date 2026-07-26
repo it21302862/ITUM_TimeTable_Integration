@@ -28,7 +28,9 @@ export const api = {
       body: JSON.stringify({ email, password }),
     });
     if (!response.ok) {
-      throw new Error("Failed to login");
+      console.log("Status:", response.status);
+      console.log("Response:", data);
+      throw new Error(data.error || "Failed to login");
     }
     return response.json();
   },
@@ -308,18 +310,18 @@ export const api = {
   },
 
   async getCoursesBySemester(academicYearId, semesterId) {
-  const url = `${API_BASE_URL}/courses?academicYearId=${academicYearId}&semesterId=${semesterId}`;
+    const url = `${API_BASE_URL}/courses?academicYearId=${academicYearId}&semesterId=${semesterId}`;
 
-  console.log("Calling:", url);
+    console.log("Calling:", url);
 
-  const response = await fetch(url);
+    const response = await fetch(url);
 
-  if (!response.ok) {
-    throw new Error("Failed to fetch courses");
-  }
+    if (!response.ok) {
+      throw new Error("Failed to fetch courses");
+    }
 
-  return response.json();
-},
+    return response.json();
+  },
 
   async deleteTimetableSlot(id) {
     const response = await fetch(`${API_BASE_URL}/timetable/${id}`, {
@@ -372,26 +374,26 @@ export const api = {
   // },
 
   async getCourses(filters = {}) {
-  const params = new URLSearchParams();
+    const params = new URLSearchParams();
 
-  if (filters.academicYearId) {
-    params.append("academicYearId", filters.academicYearId);
-  }
+    if (filters.academicYearId) {
+      params.append("academicYearId", filters.academicYearId);
+    }
 
-  if (filters.semesterId) {
-    params.append("semesterId", filters.semesterId);
-  }
+    if (filters.semesterId) {
+      params.append("semesterId", filters.semesterId);
+    }
 
-  const response = await fetch(
-    `${API_BASE_URL}/courses?${params.toString()}`
-  );
+    const response = await fetch(
+      `${API_BASE_URL}/courses?${params.toString()}`,
+    );
 
-  if (!response.ok) {
-    throw new Error("Failed to fetch courses");
-  }
+    if (!response.ok) {
+      throw new Error("Failed to fetch courses");
+    }
 
-  return response.json();
-},
+    return response.json();
+  },
 
   async getCoursesBySemester(semesterId) {
     const response = await fetch(
@@ -585,7 +587,9 @@ export const api = {
     );
     const body = await response.json().catch(() => null);
     if (!response.ok) {
-      const message = body?.message || `Failed to fetch module outline for course (${response.status})`;
+      const message =
+        body?.message ||
+        `Failed to fetch module outline for course (${response.status})`;
       const error = new Error(message);
       error.status = response.status;
       throw error;
