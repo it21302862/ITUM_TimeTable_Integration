@@ -1,4 +1,5 @@
 import { Semester, AcademicYear } from "../models/index.js";
+import { buildActiveSemesterWhere } from "../utils/semesterStatus.js";
 
 export async function create(req, res) {
   res.json(await Semester.create(req.body));
@@ -12,8 +13,11 @@ export async function getByYear(req, res) {
 
 export async function getCurrent(req, res) {
   try {
+    const { yearId } = req.query;
+    const extra = yearId ? { AcademicYearId: Number(yearId) } : {};
+
     const semesters = await Semester.findAll({
-      where: { status: "CURRENT" },
+      where: buildActiveSemesterWhere(extra),
       include: [{ model: AcademicYear }],
       order: [["name", "ASC"]]
     });

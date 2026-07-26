@@ -4,7 +4,7 @@ export default (sequelize, DataTypes) => {
     startDate: DataTypes.DATE,
     endDate: DataTypes.DATE,
     status: {
-      type: DataTypes.ENUM("CURRENT", "PAST", "DRAFT"),
+      type: DataTypes.ENUM("CURRENT", "PRESENT", "ACTIVE", "UPCOMING", "PAST", "DRAFT"),
     },
   });
 };

@@ -96,6 +96,9 @@ export async function sendAssignmentNote(req, res) {
       type: "ASSIGNMENT_NOTE",
       status: "PENDING",
       sessionDetails: sessionDetails || null,
+      timetableSlotId: sessionDetails?.timetableSlotId
+        ? Number(sessionDetails.timetableSlotId)
+        : null,
     });
 
     const fullNotification = await Notification.findByPk(notification.id, {
@@ -168,6 +171,83 @@ export async function acceptAssignment(req, res) {
     }
 
     const details = notification.sessionDetails || {};
+    const accepter = await Instructor.findByPk(req.user.id);
+    const timetableSlotId = details.timetableSlotId
+      ? Number(details.timetableSlotId)
+      : null;
+
+    let slot;
+
+    if (timetableSlotId) {
+      slot = await TimetableSlot.findByPk(timetableSlotId, {
+        include: [
+          { model: Course },
+          { model: Instructor },
+          {
+            model: Instructor,
+            as: "SupportiveInstructors",
+            through: { attributes: [] },
+          },
+          { model: LectureHall },
+        ],
+      });
+
+      if (!slot) {
+        return res.status(404).json({ message: "Timetable slot not found for this assignment" });
+      }
+
+      if (slot.InstructorId === req.user.id) {
+        return res.status(400).json({
+          message: "You are already the primary instructor for this session",
+        });
+      }
+
+      const existingSupportive = slot.SupportiveInstructors || [];
+      if (existingSupportive.some((i) => i.id === req.user.id)) {
+        return res.status(400).json({
+          message: "You are already assigned as an additional instructor for this session",
+        });
+      }
+
+      await slot.addSupportiveInstructors([req.user.id]);
+
+      notification.status = "ACCEPTED";
+      notification.isRead = true;
+      notification.timetableSlotId = slot.id;
+      await notification.save();
+
+      await Notification.create({
+        recipientId: notification.senderId,
+        senderId: req.user.id,
+        senderName: accepter?.name || req.user.name,
+        message: `${accepter?.name || "Instructor"} accepted your assignment request for ${details.module || slot.Course?.name || "the session"}.`,
+        type: "ASSIGNMENT_ACCEPTED",
+        status: "ACCEPTED",
+        sessionDetails: details,
+        relatedNotificationId: notification.id,
+        timetableSlotId: slot.id,
+      });
+
+      const updatedSlot = await TimetableSlot.findByPk(slot.id, {
+        include: [
+          { model: Course },
+          { model: Instructor },
+          {
+            model: Instructor,
+            as: "SupportiveInstructors",
+            through: { attributes: [] },
+          },
+          { model: LectureHall },
+        ],
+      });
+
+      return res.json({
+        notification,
+        slot: updatedSlot,
+        message: "Assignment accepted and additional instructor added to timetable slot",
+      });
+    }
+
     const semesterId = details.semesterId;
     const dayOfWeek = mapDayToEnum(details.day);
     const startTime = details.startTime;
@@ -187,7 +267,7 @@ export async function acceptAssignment(req, res) {
       return res.status(400).json({ message: "Could not resolve course or lecture hall for this assignment" });
     }
 
-    const slot = await TimetableSlot.create({
+    slot = await TimetableSlot.create({
       dayOfWeek,
       startTime,
       endTime,
@@ -204,8 +284,6 @@ export async function acceptAssignment(req, res) {
     notification.isRead = true;
     notification.timetableSlotId = slot.id;
     await notification.save();
-
-    const accepter = await Instructor.findByPk(req.user.id);
 
     await Notification.create({
       recipientId: notification.senderId,

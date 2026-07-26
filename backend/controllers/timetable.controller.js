@@ -1,5 +1,37 @@
 import { TimetableSlot, Course, Instructor, LectureHall, Semester } from "../models/index.js";
 import { Op } from "sequelize";
+import { buildActiveSemesterWhere } from "../utils/semesterStatus.js";
+
+function timeToMinutes(timeInput) {
+  if (!timeInput) return 0;
+  let timeStr = timeInput;
+  if (timeInput instanceof Date) {
+    timeStr = timeInput.toTimeString().slice(0, 5);
+  } else if (typeof timeInput !== "string") {
+    timeStr = String(timeInput);
+  }
+  const parts = timeStr.split(":");
+  if (parts.length >= 2) {
+    return parseInt(parts[0], 10) * 60 + parseInt(parts[1], 10);
+  }
+  return 0;
+}
+
+function timesOverlap(start1, end1, start2, end2) {
+  const s1 = timeToMinutes(start1);
+  const e1 = timeToMinutes(end1);
+  const s2 = timeToMinutes(start2);
+  const e2 = timeToMinutes(end2);
+  return s1 < e2 && s2 < e1;
+}
+
+const slotIncludes = [
+  { model: Course },
+  { model: Instructor },
+  { model: Instructor, as: "SupportiveInstructors", through: { attributes: [] } },
+  { model: LectureHall },
+  { model: Semester },
+];
 
 export async function create(req, res) {
   try {
@@ -114,6 +146,153 @@ export async function remove(req, res) {
   } catch (err) {
     console.error("Error deleting timetable slot:", err);
     res.status(500).json({ message: "Failed to delete timetable slot", error: err.message });
+  }
+}
+
+export async function getAssignableSessions(req, res) {
+  try {
+    const instructorIdNum = req.query.instructorId
+      ? Number(req.query.instructorId)
+      : null;
+    const yearIdNum = req.query.yearId ? Number(req.query.yearId) : null;
+
+    const semesterWhere = buildActiveSemesterWhere(
+      yearIdNum ? { AcademicYearId: yearIdNum } : {},
+    );
+
+    const currentSemesters = await Semester.findAll({
+      where: semesterWhere,
+      order: [["name", "ASC"]],
+    });
+
+    const semesterIds = currentSemesters.map((s) => s.id);
+
+    if (semesterIds.length === 0) {
+      return res.json({
+        semesters: [],
+        sessions: [],
+        instructorSessions: [],
+        semesterReview: [],
+        totalSessions: 0,
+        hiddenDueToConflict: 0,
+      });
+    }
+
+    const allSlots = await TimetableSlot.findAll({
+      where: { SemesterId: { [Op.in]: semesterIds } },
+      include: slotIncludes,
+      order: [
+        ["SemesterId", "ASC"],
+        ["dayOfWeek", "ASC"],
+        ["startTime", "ASC"],
+      ],
+    });
+
+    let instructorSlots = [];
+    if (instructorIdNum) {
+      const mainSlots = await TimetableSlot.findAll({
+        where: {
+          SemesterId: { [Op.in]: semesterIds },
+          InstructorId: instructorIdNum,
+        },
+        include: slotIncludes,
+      });
+
+      const supportiveSlots = await TimetableSlot.findAll({
+        where: { SemesterId: { [Op.in]: semesterIds } },
+        include: [
+          { model: Course },
+          { model: Instructor },
+          { model: LectureHall },
+          { model: Semester },
+          {
+            model: Instructor,
+            as: "SupportiveInstructors",
+            where: { id: instructorIdNum },
+            through: { attributes: [] },
+            required: true,
+          },
+        ],
+      });
+
+      const byId = new Map();
+      for (const slot of [...mainSlots, ...supportiveSlots]) {
+        byId.set(slot.id, slot);
+      }
+      instructorSlots = Array.from(byId.values());
+    }
+
+    const assignableSessions = allSlots.filter((slot) => {
+      if (!instructorIdNum) return true;
+
+      if (slot.InstructorId === instructorIdNum) return false;
+      if (slot.SupportiveInstructors?.some((i) => i.id === instructorIdNum)) {
+        return false;
+      }
+
+      for (const busy of instructorSlots) {
+        if (
+          slot.dayOfWeek === busy.dayOfWeek &&
+          timesOverlap(
+            slot.startTime,
+            slot.endTime,
+            busy.startTime,
+            busy.endTime,
+          )
+        ) {
+          return false;
+        }
+      }
+      return true;
+    });
+
+    const semesterReview = currentSemesters.map((semester) => {
+      const semInstructorSlots = instructorSlots.filter(
+        (s) => s.SemesterId === semester.id,
+      );
+      const semAssignable = assignableSessions.filter(
+        (s) => s.SemesterId === semester.id,
+      );
+      const semTotal = allSlots.filter((s) => s.SemesterId === semester.id);
+
+      let status = "NO_CONFLICT";
+      let label = "No Conflicts";
+
+      if (semInstructorSlots.length > 0 && semAssignable.length === 0) {
+        status = "BLOCKED";
+        label = "Fully Booked";
+      } else if (semInstructorSlots.length > 0) {
+        status = "ADVISORY";
+        label = `${semInstructorSlots.length} Existing Session${semInstructorSlots.length !== 1 ? "s" : ""}`;
+      } else if (semTotal.length === 0) {
+        status = "NO_SLOTS";
+        label = "No Sessions Listed";
+      }
+
+      return {
+        semesterId: semester.id,
+        semesterName: semester.name,
+        status,
+        label,
+        existingSessionCount: semInstructorSlots.length,
+        assignableCount: semAssignable.length,
+      };
+    });
+
+    res.json({
+      semesters: currentSemesters,
+      sessions: assignableSessions,
+      instructorSessions: instructorSlots,
+      semesterReview,
+      totalSessions: allSlots.length,
+      hiddenDueToConflict: allSlots.length - assignableSessions.length,
+    });
+  } catch (err) {
+    console.error("Error fetching assignable sessions:", err);
+    res.status(500).json({
+      message: "Failed to fetch assignable sessions",
+      error: err.message,
+    });
   }
 }
 
