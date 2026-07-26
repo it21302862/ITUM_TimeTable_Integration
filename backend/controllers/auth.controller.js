@@ -9,6 +9,22 @@ function normalizePhone(phone) {
   return String(phone).replace(/[\s\-().]/g, "");
 }
 
+function normalizeEmail(email) {
+  if (!email) return "";
+  return String(email).trim().toLowerCase();
+}
+
+async function findInstructorByEmail(email) {
+  const normalized = normalizeEmail(email);
+  if (!normalized) return null;
+
+  const instructor = await Instructor.findOne({ where: { email: normalized } });
+  if (instructor) return instructor;
+
+  const all = await Instructor.findAll();
+  return all.find((i) => normalizeEmail(i.email) === normalized) || null;
+}
+
 async function findInstructorByPhone(phone) {
   const normalized = normalizePhone(phone);
   if (!normalized) return null;
@@ -75,8 +91,9 @@ export const login = async (req, res) => {
       return res.status(400).json({ error: "Email and password are required" });
     }
 
-    // Find instructor in database
-    const instructor = await Instructor.findOne({ where: { email } });
+    // Normalize input and find instructor in database
+    const normalizedEmail = normalizeEmail(email);
+    const instructor = await findInstructorByEmail(normalizedEmail);
 
     if (!instructor) {
       return res.status(401).json({ error: "Invalid email or password" });

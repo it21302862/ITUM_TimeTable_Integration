@@ -2,7 +2,7 @@ import "dotenv/config";
 import { listen } from "./app.js";
 import { sequelize } from "./models/index.js";
 
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 10000;
 
 sequelize.sync({ alter: true }).then(() => {
   listen(PORT, () => {
